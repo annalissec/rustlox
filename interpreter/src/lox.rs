@@ -37,7 +37,7 @@ impl Lox{
             let mut buffer = String::new();
             let line = input.read_line(&mut buffer);
             match line {
-                //I dont think this is right 
+                // TODO: if buffer is empty? 
                 Ok(0) => break,
                 Ok(_) => {
                     self.run(&buffer);
@@ -50,7 +50,7 @@ impl Lox{
 
     pub fn run(&mut self, source: &String) {
         println!("{}", source);
-        //not implemented yet
+        // TODO: scanner not implemented yet
         //let mut scanner = scanner::Scanner.new(source);
         //let tokens = scanner.scanTokens();
 
@@ -59,11 +59,11 @@ impl Lox{
         // }
     }
 
-    pub fn error(&mut self, line: u64, message: &str) {
+    pub fn error(&mut self, line: usize, message: &String) {
         self.report(line, "", message);
     }
 
-    pub fn report(&mut self, line: u64, err: &str, message: &str) {
+    pub fn report(&mut self, line: usize, err: &str, message: &String) {
         println!("[line {0}] Error{1}: {2}", line, err, message);
         self.had_error = true;
     }
