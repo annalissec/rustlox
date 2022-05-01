@@ -8,6 +8,8 @@ mod token;
 mod object;
 mod scanner;
 mod error;
+mod expr;
+mod parser;
 
 
 fn main() {

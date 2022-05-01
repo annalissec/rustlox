@@ -2,7 +2,7 @@ use crate::tokentype::*;
 use crate::object::Object;
 use std::fmt;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Token {
     pub t_type: TokenType,
     pub lexeme: String,
@@ -35,4 +35,12 @@ impl fmt::Display for Token {
             &Object::Nil
         })
     }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Literal {
+    String_(String),
+    Number(f64),
+    Bool(bool),
+    Nil,
 }
