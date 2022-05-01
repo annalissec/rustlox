@@ -3,6 +3,11 @@ mod lox;
 use std::env::args;
 
 use crate::lox::Lox;
+mod tokentype;
+mod token;
+mod object;
+mod scanner;
+mod error;
 
 
 fn main() {
@@ -14,7 +19,7 @@ fn main() {
         std::process::exit(64);
     } 
     else if args.len() == 2 {
-        lox.run_file(&args[1]);
+        lox.run_file(&args[1]).expect("Could not run file");
     }
     else {
         lox.run_prompt();

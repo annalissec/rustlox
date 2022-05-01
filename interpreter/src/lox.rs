@@ -2,14 +2,17 @@
 use std::{fs, io};
 use std::io::Write;
 use std::process::exit;
+use crate::error::*;
+use crate::scanner;
 
 //mod scanner;
 
+#[derive(Clone, Debug)]
 pub struct Lox {
     had_error: bool,
 }
 
-impl Lox{
+impl Lox {
     pub fn new() -> Self {
         Lox {
             had_error: false,
@@ -17,15 +20,19 @@ impl Lox{
     }
 
 
-    pub fn run_file (&mut self, path: &String) {
+    pub fn run_file (&mut self, path: &String) -> io::Result<()>{
         let code = fs::read_to_string(path).unwrap();
 
-        self.run(&code);
-
-        if self.had_error {
-            exit(0);
+        match self.run(code) {
+            Ok(_) => {},
+            Err(mut e) => {
+                //TODO: I hate rust
+                e.report(String::from(""));
+                exit(65);
+            }
+            // _ => Ok(())
         }
-
+        Ok(())
     }
 
     pub fn run_prompt (&mut self) {
@@ -40,7 +47,7 @@ impl Lox{
                 // TODO: if buffer is empty? 
                 Ok(0) => break,
                 Ok(_) => {
-                    self.run(&buffer);
+                    self.run(buffer);
                     self.had_error = false;
                 }
                 _ => break,
@@ -48,23 +55,15 @@ impl Lox{
         }
     }
 
-    pub fn run(&mut self, source: &String) {
+    pub fn run(&mut self, source: String) -> Result<(), LoxError>{
         println!("{}", source);
-        // TODO: scanner not implemented yet
-        //let mut scanner = scanner::Scanner.new(source);
-        //let tokens = scanner.scanTokens();
+        let mut scanner = scanner::Scanner::new(source);
+        let tokens = scanner.scan_tokens();
 
-        // for token in tokens {
-        //     println!("{}", token);
-        // }
-    }
-
-    pub fn error(&mut self, line: usize, message: &String) {
-        self.report(line, "", message);
-    }
-
-    pub fn report(&mut self, line: usize, err: &str, message: &String) {
-        println!("[line {0}] Error{1}: {2}", line, err, message);
-        self.had_error = true;
+        for token in tokens {
+            println!("{:?}", token);
+        }
+        
+        Ok(())
     }
 }

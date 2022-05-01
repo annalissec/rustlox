@@ -1,24 +1,13 @@
-use crate::tokentype::TokenType;
+use crate::tokentype::*;
 use crate::object::Object;
 use std::fmt;
 
+#[derive(Clone, Debug)]
 pub struct Token {
-    t_type: TokenType,
-    lexeme: String,
-    literal: Option<Object>,
-    line: usize,
-}
-
-// TODO: toString() ? https://github.com/Harmful-Alchemist/rilox/blob/main/src/token.rs
-#[derive(Debug)]
-impl fmt::Debug for Token {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Token")
-            .field("type", &self.token_type)
-            .field("lexeme", &self.lexeme)
-            .field("literal", &self.literal)
-            .finish()
-    }
+    pub t_type: TokenType,
+    pub lexeme: String,
+    pub literal: Option<Object>,
+    pub line: usize,
 }
 
 impl Token {
@@ -36,4 +25,14 @@ impl Token {
                 line,
             }
         }
+}
+
+impl fmt::Display for Token {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?} {} {}", self.t_type, self.lexeme, if let Some(literal) = &self.literal {
+            literal
+        }else {
+            &Object::Nil
+        })
+    }
 }

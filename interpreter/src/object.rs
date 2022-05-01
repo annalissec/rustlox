@@ -1,27 +1,28 @@
 
 use std::fmt;
 
-#[derive(Debug)]
+
+#[derive(Debug, Clone)]
 pub enum Object {
     String(String),
     Number(f64),
     Bool(bool),
-    None,
+    Nil,
 }
 
 impl fmt::Display for Object {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             Object::Number(x) => write!(f, "{x}"),
-            Object::String(s) => write!(f, "{x}"),
+            Object::String(x) => write!(f, "{x}"),
             Object::Bool(x) => {
                 if *x {
-                    write!(f, "true");
+                    write!(f, "true")
                 } else {
-                    write!(f, "false");
+                    write!(f, "false")
                 }
             }
-            Object::None => write!(f, "nil"),
+            Object::Nil => write!(f, "nil"),
         }
     }
 }
