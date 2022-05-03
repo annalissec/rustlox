@@ -37,10 +37,10 @@ impl fmt::Display for Token {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum Literal {
-    String_(String),
-    Number(f64),
-    Bool(bool),
-    Nil,
-}
+// #[derive(Debug, Clone, PartialEq)]
+// pub enum Literal {
+//     String_(String),
+//     Number(f64),
+//     Bool(bool),
+//     Nil,
+// }

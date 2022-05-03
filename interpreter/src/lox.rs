@@ -4,6 +4,7 @@ use std::io::Write;
 use std::process::exit;
 use crate::error::*;
 use crate::scanner;
+use crate::parser::Parser;
 
 //mod scanner;
 
@@ -58,12 +59,13 @@ impl Lox {
     pub fn run(&mut self, source: String) -> Result<(), LoxError>{
         println!("{}", source);
         let mut scanner = scanner::Scanner::new(source);
-        let tokens = scanner.scan_tokens();
+        let tokens = scanner.scan_tokens()?;
 
-        for token in tokens {
-            println!("{:?}", token);
-        }
-        
+        let mut parser = Parser::new(tokens);
+        let expression = parser.parse();
+        //TODO: figure out
+        Err(expression)
+        println!("{}", expression);
         Ok(())
     }
 }
