@@ -10,6 +10,7 @@ mod scanner;
 mod error;
 mod expr;
 mod parser;
+mod astprinter;
 
 
 fn main() {

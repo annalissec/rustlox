@@ -20,11 +20,16 @@ impl Parser {
         }
     }
 
-    pub fn parse(&mut self) -> Result<Expr, LoxError>{
+    pub fn parse(&mut self) -> Option<Expr>{
+
+        // match self.expression() {
+        //     Ok(expr) => Some(expr),
+        //     Err(_) => None
+        // }
         if self.had_error {
-            Err(LoxError::null())
+            return None;
         } else {
-            Ok(self.expression())
+            return Some(self.expression());
         }
     }
 
