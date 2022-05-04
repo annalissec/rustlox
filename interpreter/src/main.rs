@@ -11,6 +11,7 @@ mod error;
 mod expr;
 mod parser;
 mod astprinter;
+mod interpreter;
 
 
 fn main() {
