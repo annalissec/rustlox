@@ -1,49 +1,73 @@
-use super::token::*;
-use super::object::Object;
+use crate::error::*;
+use crate::token::*;
+use crate::object::*;
+use std::rc::Rc;
 
-
-//TODO: https://github.com/sasurau4/lox-rust/blob/master/interpreter/src/expr.rs
-pub trait Visitor<T> {
-    fn visit_binary_expr(&mut self, left: &Expr, operator: &Token, right: &Expr) -> T;
-    fn visit_grouping_expr(&mut self, expression: &Expr) -> T;
-    fn visit_literal_expr(&mut self, expr: &Object) -> T;
-    fn visit_unary_expr(&mut self, operator: &Token, right: &Expr) -> T;
-}
-
-pub trait Acceptor<T> {
-    fn accept(&self, visitor: &mut dyn Visitor<T>) -> T;
-}
-
-#[derive(Debug, Clone, PartialEq)]
 pub enum Expr {
-    Binary {
-        left: Box<Expr>,
-        operator: Token,
-        right: Box<Expr>,
-    },
-    Unary {
-        operator: Token,
-        right: Box<Expr>,
-    },
-    Grouping {
-        expression: Box<Expr>,
-    },
-    Literal {
-        value: Option<Object>,
-    },
+    Binary(Rc<BinaryExpr>),
+    Grouping(Rc<GroupingExpr>),
+    Literal(Rc<LiteralExpr>),
+    Unary(Rc<UnaryExpr>),
 }
 
-impl<T> Acceptor<T> for Expr {
-    fn accept(&self, visitor: &mut dyn Visitor<T>) -> T {
+impl Expr {
+    pub fn accept<T>(&self, expr_visitor: &dyn ExprVisitor<T>) -> Result<T, LoxError> {
         match self {
-            Expr::Binary {
-                left,
-                operator,
-                right,
-            } => visitor.visit_binary_expr(left, operator, right),
-            Expr::Unary { operator, right } => visitor.visit_unary_expr(operator, right),
-            Expr::Grouping { expression } => visitor.visit_grouping_expr(expression),
-            Expr::Literal { value } => visitor.visit_literal_expr(&value.clone().unwrap()),
+            Expr::Binary(v) => v.accept(expr_visitor),
+            Expr::Grouping(v) => v.accept(expr_visitor),
+            Expr::Literal(v) => v.accept(expr_visitor),
+            Expr::Unary(v) => v.accept(expr_visitor),
         }
     }
 }
+
+pub trait ExprVisitor<T> {
+    fn visit_binary_expr(&self, expr: &BinaryExpr) -> Result<T, LoxError>;
+    fn visit_grouping_expr(&self, expr: &GroupingExpr) -> Result<T, LoxError>;
+    fn visit_literal_expr(&self, expr: &LiteralExpr) -> Result<T, LoxError>;
+    fn visit_unary_expr(&self, expr: &UnaryExpr) -> Result<T, LoxError>;
+}
+
+pub struct BinaryExpr {
+    pub left: Rc<Expr>,
+    pub operator: Token,
+    pub right: Rc<Expr>,
+}
+
+pub struct GroupingExpr {
+    pub expression: Rc<Expr>,
+}
+
+pub struct LiteralExpr {
+    pub value: Option<Object>,
+}
+
+pub struct UnaryExpr {
+    pub operator: Token,
+    pub right: Rc<Expr>,
+}
+
+impl BinaryExpr {
+    pub fn accept<T>(&self, visitor: &dyn ExprVisitor<T>) -> Result<T, LoxError> {
+        visitor.visit_binary_expr(self)
+    }
+}
+
+impl GroupingExpr {
+    pub fn accept<T>(&self, visitor: &dyn ExprVisitor<T>) -> Result<T, LoxError> {
+        visitor.visit_grouping_expr(self)
+    }
+}
+
+impl LiteralExpr {
+    pub fn accept<T>(&self, visitor: &dyn ExprVisitor<T>) -> Result<T, LoxError> {
+        visitor.visit_literal_expr(self)
+    }
+}
+
+impl UnaryExpr {
+    pub fn accept<T>(&self, visitor: &dyn ExprVisitor<T>) -> Result<T, LoxError> {
+        visitor.visit_unary_expr(self)
+    }
+}
+

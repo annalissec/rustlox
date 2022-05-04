@@ -4,6 +4,9 @@ use crate::tokentype::TokenType;
 use crate::expr::Expr;
 use crate::object::Object;
 use crate::error::LoxError;
+use crate::expr::*;
+
+use std::rc::Rc;
 
 pub struct Parser {
     tokens: Vec<Token>,
@@ -43,7 +46,7 @@ impl Parser {
         while self.is_match(&[BANG_EQUAL, EQUAL_EQUAL]) {
             let operator = self.previous();
             let right = self.comparison();
-            expr = Expr::Binary{left: Box::new(expr), operator: operator, right: Box::new(right)};
+            expr = Expr::Binary(Rc::new(BinaryExpr {left: Rc::new(expr), operator: operator, right: Rc::new(right)}));
         }
         expr
     }
@@ -54,7 +57,7 @@ impl Parser {
         while self.is_match(&[GREATER, GREATER_EQUAL, LESS, LESS_EQUAL]) {
             let operator = self.previous();
             let right = self.term();
-            expr = Expr::Binary{left: Box::new(expr), operator: operator, right: Box::new(right)};
+            expr = Expr::Binary(Rc::new(BinaryExpr {left: Rc::new(expr), operator: operator, right: Rc::new(right)}));
         }
         return expr;
     }
@@ -65,7 +68,7 @@ impl Parser {
         while self.is_match(&[MINUS, PLUS]) {
             let operator = self.previous();
             let right = self.factor();
-            expr = Expr::Binary{left: Box::new(expr), operator: operator, right: Box::new(right)};
+            expr = Expr::Binary(Rc::new(BinaryExpr {left: Rc::new(expr), operator: operator, right: Rc::new(right)}));
         }
 
         return expr;
@@ -77,7 +80,7 @@ impl Parser {
         while self.is_match(&[SLASH, STAR]) {
             let operator = self.previous();
             let right = self.unary();
-            expr = Expr::Binary{left: Box::new(expr), operator: operator, right: Box::new(right)}; 
+            expr = Expr::Binary(Rc::new(BinaryExpr {left: Rc::new(expr), operator: operator, right: Rc::new(right)}));
         }
 
         return expr;
@@ -87,30 +90,30 @@ impl Parser {
         if self.is_match(&[BANG, MINUS]) {
             let operator = self.previous();
             let right = self.unary();
-            return Expr::Unary{operator: operator, right: Box::new(right)};
+            return Expr::Unary(Rc::new(UnaryExpr {operator: operator, right: Rc::new(right)})); 
         }
         return self.primary().unwrap();
     }
 
     fn primary(&mut self) -> Result<Expr, LoxError>{
         if self.is_match(&[FALSE.clone()]) {
-            return Ok(Expr::Literal{value: Some(Object::Bool(false))});
+            return Ok(Expr::Literal(Rc::new(LiteralExpr{value: Some(Object::Bool(false))})));
         }
         if self.is_match(&[TRUE]) {
-            return Ok(Expr::Literal{value: Some(Object::Bool(true))});
+            return Ok(Expr::Literal(Rc::new(LiteralExpr{value: Some(Object::Bool(true))})));
         }
         if self.is_match(&[NIL]) {
-            return Ok(Expr::Literal{value: Some(Object::Nil)});
+            return Ok(Expr::Literal(Rc::new(LiteralExpr{value: Some(Object::Nil)})));
         }
 
         if self.is_match(&[NUMBER, STRING]) {
-            return Ok(Expr::Literal{value: Some(self.previous().literal.unwrap())});
+           return Ok(Expr::Literal(Rc::new(LiteralExpr{value: Some(self.previous().literal.unwrap())})));
         }
 
         if self.is_match(&[LEFT_PAREN]) {
             let mut expr = self.expression();
             self.consume(RIGHT_PAREN, String::from("Expect ')' after expression."));
-            return Ok(Expr::Grouping{expression: Box::new(expr)});
+            return Ok(Expr::Grouping(Rc::new(GroupingExpr {expression: Rc::new(expr)})));
         }
 
         let peek_var = self.peek();

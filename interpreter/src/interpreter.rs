@@ -6,8 +6,8 @@ pub struct Interpreter {
 
 }
 
-impl Visitor<Object> for Interpreter {
-    fn visit_literal_expr(&mut self, expr: Expr::Literal) -> Object{
-        return expr.value;
-    }
-}
+// impl ExprVisitor<Object> for Interpreter {
+//     fn visit_literal_expr(&mut self, expr: LiteralExpr) -> Object{
+//         return expr.value;
+//     }
+// }

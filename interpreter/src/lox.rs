@@ -67,8 +67,8 @@ impl Lox {
         match parser.parse() {
             None => {},
             Some(expr) => {
-                let mut printer = AstPrinter{};
-                println!("{}", printer.print(expr));
+                let printer = AstPrinter{};
+                println!("{}", printer.print(expr)?);
             }
         }
 
