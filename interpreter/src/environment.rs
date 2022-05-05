@@ -5,7 +5,7 @@ use crate::error::LoxError;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Environment {
     enclosing: Option<Rc<RefCell<Environment>>>,
     values: HashMap<String, Object>,
@@ -32,23 +32,26 @@ impl Environment {
         if let Some(object) = self.values.get(&name.lexeme) {
             return Ok(*object);
         } 
-        if !assert_eq!(self.enclosing, None) {
-            return Ok(self.enclosing.as_ref().unwrap().borrow().get(name)?);
-        }
+        // if !assert_eq!(self.enclosing, None) {
+        //     return Ok(self.enclosing.as_ref().unwrap().borrow().get(name)?);
+        // }
         else {
             return Err(LoxError::runtime_error(&name, String::from(format!("Undefined variable '{}'.", name.lexeme))));
         }                                           
     }
     
-    pub fn assign(&self, name: &Token, value: &Object) -> Result<(), LoxError>{
+    pub fn assign(&mut self, name: &Token, value: &Object) -> Result<(), LoxError>{
         if self.values.contains_key(&name.lexeme) {
-            self.values.insert(name.lexeme, *value);
+            self.values.insert(name.lexeme, value.clone());
             return Ok(());
         }
-        if !assert_eq!(self.enclosing, None) {
-            self.enclosing.as_ref().unwrap().borrow().assign(name, value)?;
-            return Ok(());
+        // if !assert_eq!(self.enclosing, None) {
+        //     self.enclosing.as_ref().unwrap().borrow().assign(name, value)?;
+        //     return Ok(());
+        // } 
+        else {
+            Err(LoxError::runtime_error(name, String::from(format!("Undefined variable '{}'.", &name.lexeme))))
         }
-        Err(LoxError::runtime_error(name, String::from(format!("Undefined variable '{}'.", &name.lexeme))))
+        
     }
 }

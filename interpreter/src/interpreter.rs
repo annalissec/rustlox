@@ -5,6 +5,7 @@ use crate::tokentype::TokenType::*;
 use crate::token::Token;
 use crate::stmt::*;
 use crate::environment::Environment;
+use std::rc::Rc;
 
 #[derive(Clone, Debug)]
 pub struct Interpreter {
@@ -38,9 +39,10 @@ impl Interpreter {
         Ok(())
     }
 
-    fn execute_block(&self, statements: &Rc<Vec<Rc<Stmt>>>, environment: Environment) -> {
+    fn execute_block(&self, statements: &Rc<Vec<Rc<Stmt>>>, environment: Environment) -> Result<(), LoxError> {
         //TODO: start here
-        let previous = self.environment.repl
+        //let previous = self.environment.repl
+        Ok(())
     }
 
     fn is_truthy(&self, object: &Object) -> bool {
@@ -207,12 +209,12 @@ impl ExprVisitor<Object> for Interpreter {
         Ok(self.environment.get(&expr.name)?)
     }
 
-    fn visit_assign_expr(&self, expr: AssignExpr) -> Result<Object, LoxError> {
+    fn visit_assign_expr(&self, expr: &AssignExpr) -> Result<Object, LoxError> {
         let value = self.evaluate(&expr.value);
 
-        self.environment.assign(&expr.name, value.clone());
+        self.environment.assign(&expr.name, &value.clone()?);
 
-        Ok(value);
+        return Ok(value?);
     }
 }   
 

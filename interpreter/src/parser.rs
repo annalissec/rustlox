@@ -10,6 +10,8 @@ use crate::stmt::*;
 
 use std::rc::Rc;
 
+
+#[derive(Debug, Clone)]
 pub struct Parser {
     tokens: Vec<Token>,
     current: usize,
@@ -44,7 +46,7 @@ impl Parser {
                 self.synchronize();
             }
             _=> {
-                return Ok(Rc::new(self.var_declaration()?));
+                return Ok(self.var_declaration()?);
             }
         }
         return Ok(self.statement()?);
@@ -58,7 +60,7 @@ impl Parser {
             return Ok(Rc::new(Stmt::Block(Rc::new(BlockStmt{statements: Rc::new(self.block()?)}))));
         }
          
-        return Ok(Rc::new(self.expression_statement()?));
+        return Ok(self.expression_statement()?);
     }
 
     fn print_statement(&mut self) -> Result<Stmt, LoxError> {
@@ -106,8 +108,9 @@ impl Parser {
             let value = self.assignment();
 
             if let Expr::Variable(expr) = expr {
-                return Ok(Expr::Assign(Rc::new(AssignExpr{name: expr.name,  value: Rc::new(value?)}))) 
+                return Ok(Expr::Assign(Rc::new(AssignExpr{name: expr.name.clone(),  value: Rc::new(value?)}))) 
             } else {
+                //TODO: might be wrong
                 return Err(LoxError::error(equals.line, String::from("Invalid assignment target.")))
             }
         }
@@ -191,7 +194,7 @@ impl Parser {
         if self.is_match(&[LEFT_PAREN]) {
             let expr = self.expression();
             self.consume(RIGHT_PAREN, String::from("Expect ')' after expression."))?;
-            return Ok(Expr::Grouping(Rc::new(GroupingExpr {expression: Rc::new(expr)})));
+            return Ok(Expr::Grouping(Rc::new(GroupingExpr {expression: Rc::new(expr?)})));
         }
 
         let peek_var = self.peek();
