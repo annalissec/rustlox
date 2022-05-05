@@ -188,7 +188,7 @@ impl Scanner {
 
         let s = &self.source[self.start..self.current];
 
-        self.add_token_fr(TokenType::NUMBER, Some(Object::Number(s.parse::<f64>().unwrap())));
+        &self.add_token_fr(TokenType::NUMBER, Some(Object::Number(s.parse::<f64>().unwrap())));
     }
 
     pub fn string(&mut self) {

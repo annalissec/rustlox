@@ -112,7 +112,7 @@ impl Parser {
         }
 
         if self.is_match(&[LEFT_PAREN]) {
-            let mut expr = self.expression();
+            let expr = self.expression();
             self.consume(RIGHT_PAREN, String::from("Expect ')' after expression."));
             return Ok(Expr::Grouping(Rc::new(GroupingExpr {expression: Rc::new(expr)})));
         }
