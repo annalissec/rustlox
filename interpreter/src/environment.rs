@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use crate::object::Object;
 use crate::token::Token;
 use crate::error::LoxError;
-use std::cell::RefCell;
 use std::rc::Rc;
+use std::cell::RefCell;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Environment {
@@ -19,18 +19,18 @@ impl Environment {
         }
     }
 
-    pub fn new_enclosing(&self, enclosing: &Environment) {
-        self.enclosing = Some(Rc::new(RefCell::new(*enclosing)));
+    pub fn new_enclosing(&self, enclosing: Environment) {
+        self.enclosing = Some(Rc::new(enclosing));
     }
 
-    pub fn define(&self, name: String, value: &Object) {
-        self.values.insert(name, *value);
+    pub fn define(&self, name: String, value: Object) {
+        self.values.clone().insert(name, value);
         return;
     }
 
     pub fn get(&self, name: &Token) -> Result<Object, LoxError> {
         if let Some(object) = self.values.get(&name.lexeme) {
-            return Ok(*object);
+            return Ok(object.clone());
         } 
         // if !assert_eq!(self.enclosing, None) {
         //     return Ok(self.enclosing.as_ref().unwrap().borrow().get(name)?);
@@ -40,9 +40,9 @@ impl Environment {
         }                                           
     }
     
-    pub fn assign(&mut self, name: &Token, value: &Object) -> Result<(), LoxError>{
+    pub fn assign(&mut self, name: &Token, value: Object) -> Result<(), LoxError>{
         if self.values.contains_key(&name.lexeme) {
-            self.values.insert(name.lexeme, value.clone());
+            self.values.insert(name.lexeme.clone(), value.clone());
             return Ok(());
         }
         // if !assert_eq!(self.enclosing, None) {

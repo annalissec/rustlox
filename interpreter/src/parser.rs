@@ -90,7 +90,7 @@ impl Parser {
         return Ok(Rc::new(Stmt::Expression(Rc::new(ExpressionStmt {expression: Rc::new(expr?)}))));
     }
 
-    fn block(&self) -> Result<Vec<Rc<Stmt>>, LoxError> {
+    fn block(&mut self) -> Result<Vec<Rc<Stmt>>, LoxError> {
         let mut statements = Vec::new();
 
         while !self.check(RIGHT_BRACE) && !self.is_at_end() {

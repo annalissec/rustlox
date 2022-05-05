@@ -24,6 +24,14 @@ impl Token {
                 line,
             }
         }
+        pub fn dup(&self) -> Token {
+            Token {
+                t_type: self.t_type,
+                lexeme: self.lexeme.to_string(),
+                literal: self.literal.clone(),
+                line: self.line,
+            }
+        }
 }
 
 impl fmt::Display for Token {

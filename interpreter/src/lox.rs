@@ -6,6 +6,7 @@ use crate::error::*;
 use crate::scanner;
 use crate::parser::Parser;
 use crate::interpreter::Interpreter;
+//use std::rc::Rc;
 
 //mod scanner;
 
@@ -19,7 +20,7 @@ impl Lox {
     pub fn new() -> Self {
         Lox {
             had_error: false,
-            interpreter: Interpreter {}
+            interpreter: Interpreter::new()
         }
     }
 
@@ -65,7 +66,7 @@ impl Lox {
 
         let statements = parser.parse();
         
-        self.interpreter.interpret(statements)?;
+        self.interpreter.interpret(statements?);
 
     
         Ok(())

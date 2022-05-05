@@ -6,19 +6,20 @@ use crate::token::Token;
 use crate::stmt::*;
 use crate::environment::Environment;
 use std::rc::Rc;
+use std::cell::RefCell;
 
 #[derive(Clone, Debug)]
 pub struct Interpreter {
-    environment: Environment
+    environment: RefCell<Rc<RefCell<Environment>>>
 }
 
 impl Interpreter {
     pub fn new() -> Self {
         Interpreter {
-            environment: Environment::new(),   
+            environment: RefCell::new(Rc::new(RefCell::new(Environment::new()))),   
         }
     }
-    pub fn interpret(&self, statements: Vec<Stmt>) -> Result<(), LoxError> {
+    pub fn interpret(&self, statements: Vec<Rc<Stmt>>) -> Result<(), LoxError> {
         for statement in statements {
             match self.execute(&statement) {
                 LoxError => { 
@@ -30,8 +31,8 @@ impl Interpreter {
         Ok(())
     }
 
-    fn evaluate(&self, expr: &Expr) -> Result<Object, LoxError>{
-        return expr.accept(self)
+    fn evaluate(&self, expr: Rc<Expr>) -> Result<Object, LoxError>{
+        return expr.clone().accept(self)
     }
 
     fn execute(&self, stmt: &Stmt) -> Result<(), LoxError>{
@@ -89,10 +90,10 @@ impl ExprVisitor<Object> for Interpreter {
         Ok(expr.value.clone().unwrap())
     }
     fn visit_grouping_expr(&self, expr: &GroupingExpr) -> Result<Object, LoxError> {
-        Ok(self.evaluate(&expr.expression)?)
+        Ok(self.evaluate(expr.expression.clone())?)
     }
     fn visit_unary_expr(&self, expr: &UnaryExpr) -> Result<Object, LoxError> {
-        let right = self.evaluate(&expr.right)?;
+        let right = self.evaluate(expr.right.clone())?;
 
         match expr.operator.t_type {
             MINUS => {
@@ -111,8 +112,8 @@ impl ExprVisitor<Object> for Interpreter {
         }
     }
     fn visit_binary_expr(&self, expr: &BinaryExpr) -> Result<Object, LoxError>{
-        let left = self.evaluate(&expr.left)?;
-        let right = self.evaluate(&expr.right)?;
+        let left = self.evaluate(expr.left.clone())?;
+        let right = self.evaluate(expr.right.clone())?;
 
         match expr.operator.t_type {
             MINUS => {
@@ -206,13 +207,13 @@ impl ExprVisitor<Object> for Interpreter {
     }
 
     fn visit_variable_expr(&self, expr: &VariableExpr) -> Result<Object, LoxError> {
-        Ok(self.environment.get(&expr.name)?)
+        Ok(self.environment.borrow().borrow_mut().get(&expr.name)?)
     }
 
     fn visit_assign_expr(&self, expr: &AssignExpr) -> Result<Object, LoxError> {
-        let value = self.evaluate(&expr.value);
+        let value = self.evaluate(expr.value.clone());
 
-        self.environment.assign(&expr.name, &value.clone()?);
+        self.environment.borrow().borrow_mut().assign(&expr.name.clone(), value.clone()?);
 
         return Ok(value?);
     }
@@ -220,27 +221,28 @@ impl ExprVisitor<Object> for Interpreter {
 
 impl StmtVisitor<()> for Interpreter {
     fn visit_expression_stmt(&self, stmt: &ExpressionStmt) -> Result<(), LoxError> {
-        self.evaluate(&stmt.expression)?;
+        self.evaluate(stmt.expression.clone())?;
         return Ok(());
     }
     fn visit_print_stmt(&self, stmt: &PrintStmt) -> Result<(), LoxError>{
-        let value = self.evaluate(&stmt.expression)?;
+        let value = self.evaluate(stmt.expression.clone())?;
         println!("{:?}", value);
         return Ok(());
     }
     fn visit_var_stmt(&self, stmt: &VarStmt) -> Result<(), LoxError>{
-        let value = if let Some(initializer) = &stmt.initializer {
-            self.evaluate(&initializer)?
+        let value = if let Some(initializer) = stmt.initializer.clone() {
+            self.evaluate(initializer)?
         } else {
             Object::Nil
         };
     
     
-        self.environment.define(stmt.name.to_string(), &value);
+        self.environment.borrow().borrow_mut().define(stmt.name.to_string(), value);
         Ok(())
     }
+
     fn visit_block_stmt(&self, stmt: &BlockStmt) -> Result<(), LoxError>{
-        self.execute_block(stmt.statements, Environment::new());
+        self.execute_block(&stmt.statements , Environment::new());
         return Ok(());
     }
 }

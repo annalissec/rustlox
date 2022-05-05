@@ -22,10 +22,10 @@ impl Stmt {
 }
 
 pub trait StmtVisitor<T> {
-    fn visit_block_stmt(&self, expr: &BlockStmt) -> Result<T, LoxError>;
-    fn visit_expression_stmt(&self, expr: &ExpressionStmt) -> Result<T, LoxError>;
-    fn visit_print_stmt(&self, expr: &PrintStmt) -> Result<T, LoxError>;
-    fn visit_var_stmt(&self, expr: &VarStmt) -> Result<T, LoxError>;
+    fn visit_block_stmt(&self, stmt: &BlockStmt) -> Result<T, LoxError>;
+    fn visit_expression_stmt(&self, stmt: &ExpressionStmt) -> Result<T, LoxError>;
+    fn visit_print_stmt(&self, stmt: &PrintStmt) -> Result<T, LoxError>;
+    fn visit_var_stmt(&self, stmt: &VarStmt) -> Result<T, LoxError>;
 }
 
 pub struct BlockStmt {

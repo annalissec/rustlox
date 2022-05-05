@@ -127,7 +127,7 @@ fn define_ast(
 
     writeln!(file, "pub trait {}Visitor<T> {{", base_name)?;
     for t in &tree_types {
-        writeln!(file, "    fn visit_{}_{}(&self, expr: &{}) -> Result<T, LoxError>;", 
+        writeln!(file, "    fn visit_{0}_{1}(&self, {1}: &{2}) -> Result<T, LoxError>;", 
             t.base_class_name.to_lowercase(),
             base_name.to_lowercase(),
             t.class_name
