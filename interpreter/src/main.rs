@@ -3,6 +3,9 @@ mod lox;
 use std::env::args;
 
 use crate::lox::Lox;
+
+//mod astprinter;
+
 mod tokentype;
 mod token;
 mod object;
@@ -10,7 +13,6 @@ mod scanner;
 mod error;
 mod expr;
 mod parser;
-mod astprinter;
 mod interpreter;
 
 

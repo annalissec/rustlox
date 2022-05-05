@@ -113,7 +113,7 @@ impl Parser {
 
         if self.is_match(&[LEFT_PAREN]) {
             let expr = self.expression();
-            self.consume(RIGHT_PAREN, String::from("Expect ')' after expression."));
+            self.consume(RIGHT_PAREN, String::from("Expect ')' after expression."))?;
             return Ok(Expr::Grouping(Rc::new(GroupingExpr {expression: Rc::new(expr)})));
         }
 
@@ -123,7 +123,6 @@ impl Parser {
 
     fn is_match(&mut self, types: &[TokenType]) -> bool {
         for t_type in types {
-            //TODO: v bad solution, brain dead
             if self.check(t_type.clone()) {
                 self.advance();
                 return true;
@@ -182,7 +181,6 @@ impl Parser {
             }
 
             match self.peek().t_type {
-                CLASS => {return;}
                 FUN => {return;}
                 FOR => {return;}
                 VAR => {return;}

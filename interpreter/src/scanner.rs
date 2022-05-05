@@ -1,6 +1,5 @@
 use crate::token::*;
 use crate::tokentype::TokenType;
-//TODO: do you need to use TokenType before each one?
 use crate::object::*;
 use crate::error::*;
 
@@ -37,8 +36,9 @@ impl Scanner {
             "or" => Some(TokenType::OR),
             "print" => Some(TokenType::PRINT),
             "return" => Some(TokenType::RETURN),
-            "super" => Some(TokenType::SUPER),
-            "this" => Some(TokenType::THIS),
+            //no in heriitance or classes
+            // "super" => Some(TokenType::SUPER),
+            // "this" => Some(TokenType::THIS),
             "true" => Some(TokenType::TRUE),
             "var" => Some(TokenType::VAR),
             "while" => Some(TokenType::WHILE),

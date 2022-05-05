@@ -5,7 +5,6 @@ use std::process::exit;
 use crate::error::*;
 use crate::scanner;
 use crate::parser::Parser;
-use crate::astprinter::AstPrinter;
 use crate::interpreter::Interpreter;
 
 //mod scanner;
@@ -31,11 +30,9 @@ impl Lox {
         match self.run(code) {
             Ok(_) => {},
             Err(mut e) => {
-                //TODO: I hate rust
                 e.report(String::from(""));
                 exit(0);
             }
-            // _ => Ok(())
         }
         Ok(())
     }
@@ -49,7 +46,6 @@ impl Lox {
             let mut buffer = String::new();
             let line = input.read_line(&mut buffer);
             match line {
-                // TODO: if buffer is empty? 
                 Ok(0) => break,
                 Ok(_) => {
                     self.run(buffer);
@@ -67,9 +63,9 @@ impl Lox {
 
         let mut parser = Parser::new(tokens);
 
-        let mut expression = parser.parse();
+        let expression = parser.parse();
         
-        self.interpreter.interpret(expression.unwrap());
+        self.interpreter.interpret(expression.unwrap())?;
 
     
         Ok(())

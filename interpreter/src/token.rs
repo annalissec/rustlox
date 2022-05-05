@@ -18,7 +18,6 @@ impl Token {
         line: usize,
     ) -> Self {
             Token {
-                // TODO: not sure if this is correct struct initialization
                 t_type, 
                 lexeme,
                 literal,

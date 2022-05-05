@@ -39,7 +39,6 @@ impl ExprVisitor<String> for AstPrinter {
     fn visit_literal_expr(&self, expr: &LiteralExpr) -> Result<String, LoxError> {
         match expr.value {
             Some(Object::Nil) => Ok(String::from("nil")),
-            //TODO: is this to_string() for an object?
             _ => Ok(format!("{:?}", expr.value))
         }
     }

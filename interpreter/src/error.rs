@@ -1,12 +1,13 @@
 use crate::token::Token;
 use crate::tokentype::TokenType::*;
-use crate::object::Object;
+// use crate::object::Object;
+// use crate::expr::Expr;
 
 #[derive(Clone, Debug)]
 pub enum LoxError {
     Error { line: usize, message: String },
     ParseError {token: Token, message: String},
-    InterpError { left: Object, right: Object, message: String },
+    RuntimeError {operator: Token, message: String},
     Null
 }
 
@@ -30,18 +31,22 @@ impl LoxError {
 
         err
     }
-    pub fn interp_error(left: &Object, right: &Object, message: String) -> LoxError{
-        let mut err = LoxError::InterpError {
-            left: left.clone(), right: right.clone(), message: message
+
+    pub fn runtime_error(operator: &Token, message: String) -> LoxError {
+        let mut err = LoxError::RuntimeError {
+            operator: operator.clone(),message: message
         };
 
         err.report(String::from(""));
 
         err
     }
+    
     pub fn null() -> LoxError {
+        // error pretty much already handled ?
         LoxError::Null
     }
+    
 
     pub fn report(&mut self, err: String) {
         match self {
@@ -58,8 +63,8 @@ impl LoxError {
                     eprintln!("[line {0}] Error{1}: {2}", token.line, String::from(" at '") + &token.lexeme + &String::from("'"), message);
                 }
             }
-            LoxError::InterpError { left, right, message} => {
-                eprintln!("{}{}{}", message, left, right);
+            LoxError::RuntimeError {operator, message} => {
+                eprintln!("{} [line {}]", message, operator.line)
             }
             LoxError::Null => {
                 panic!("IDK bro")

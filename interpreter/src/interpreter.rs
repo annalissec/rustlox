@@ -47,7 +47,7 @@ impl Interpreter {
     fn check_number_operand(&self, operator: Token, operand: &Object) -> Result<(), LoxError> {
         match operand {
             Object::Number(_) => {Ok(())}
-            _ => {Err(LoxError::null())} //TODO: fix not number error
+            _ => {Err(LoxError::runtime_error(&operator, String::from("Operand must be a number.")))} 
         }
     }
     fn check_number_operands(&self, operator: Token, left: &Object, right: &Object) -> Result<(), LoxError> {
@@ -55,7 +55,7 @@ impl Interpreter {
             (Object::Number(_), Object::Number(_)) => {
                 Ok(())
             }
-            _=> Err(LoxError::null()) //TODO: fix error 
+            _=> Err(LoxError::runtime_error(&operator, String::from("Operands must be numbers.")))
         }
     }
 }
@@ -71,10 +71,13 @@ impl ExprVisitor<Object> for Interpreter {
         let right = self.evaluate(&expr.right)?;
 
         match expr.operator.t_type {
-            MINUS => match right {
-                Object::Number(n) => return Ok(Object::Number(-n)),
-                _ => return Ok(Object::Nil),
-            }
+            MINUS => {
+                self.check_number_operand(expr.operator.clone(), &right)?; 
+                match right {  
+                    Object::Number(n) => return Ok(Object::Number(-n)),
+                    _ => return Ok(Object::Nil),
+                }
+        }
             BANG => {
                 return Ok(Object::Bool(!self.is_truthy(&right)))
             }
@@ -89,13 +92,13 @@ impl ExprVisitor<Object> for Interpreter {
 
         match expr.operator.t_type {
             MINUS => {
-                self.check_number_operand(expr.operator.clone(), &right)?;
+                self.check_number_operands(expr.operator.clone(), &left, &right)?;
                 if let Object::Number(left) = left {
                     if let Object::Number(right)= right {
                         return Ok(Object::Number(left - right))
                     }
                 }
-                return Err(LoxError::null()) //TODO: change error message?
+                return Err(LoxError::null())
             }
             SLASH => {
                 self.check_number_operands(expr.operator.clone(), &left, &right)?;
@@ -104,7 +107,7 @@ impl ExprVisitor<Object> for Interpreter {
                         return Ok(Object::Number(left / right))
                     }
                 }
-                return Err(LoxError::null()) //TODO: change error message?
+                return Err(LoxError::null())
             }
             STAR => {
                 self.check_number_operands(expr.operator.clone(), &left, &right)?;
@@ -113,30 +116,18 @@ impl ExprVisitor<Object> for Interpreter {
                         return Ok(Object::Number(left * right))
                     }
                 }
-                return Err(LoxError::null()) //TODO: change error message?
+                return Err(LoxError::null())
             }
             PLUS => {
                 match (left.clone(), right.clone()) {
                     (Object::Number(x), Object::Number(y)) => {
                         Ok(Object::Number(x+y))
-                        // if let Object::Number(left) = left {
-                        //     if let Object::Number(right)= right {
-                        //         return Ok(Object::Number(left + right))
-                        //     }
-                        // }
-                        // return Err(LoxError::null()) //TODO: change error message?
                     },
                     (Object::String(x), Object::String(y)) => {
                         Ok(Object::String(x+&y))
-                        // if let Object::String(left) = left {
-                        //     if let Object::String(right)= right {
-                        //         return Ok(Object::String(left + right))
-                        //     }
-                        // }
-                        // return Err(LoxError::null()) //TODO: change error message?
                     },
                     _ => {
-                        return Err(LoxError::interp_error(&left, &right, String::from("Cannot add varying types: ")))
+                        return Err(LoxError::runtime_error(&expr.operator, String::from("Operands must be two numbers or two strings.")))
                     }
                 }
             }
@@ -147,7 +138,7 @@ impl ExprVisitor<Object> for Interpreter {
                         return Ok(Object::Bool(left > right))
                     }
                 }
-                return Err(LoxError::null()) //TODO: change error message?
+                return Err(LoxError::null())
             },
             GREATER_EQUAL => {
                 self.check_number_operands(expr.operator.clone(), &left, &right)?;
@@ -156,7 +147,7 @@ impl ExprVisitor<Object> for Interpreter {
                         return Ok(Object::Bool(left >= right))
                     }
                 }
-                return Err(LoxError::null()) //TODO: change error message?
+                return Err(LoxError::null())
             },
             LESS => {
                 self.check_number_operands(expr.operator.clone(), &left, &right)?;
@@ -165,7 +156,7 @@ impl ExprVisitor<Object> for Interpreter {
                         return Ok(Object::Bool(left < right))
                     }
                 }
-                return Err(LoxError::null()) //TODO: change error message?
+                return Err(LoxError::null())
             },
             LESS_EQUAL => {
                 self.check_number_operands(expr.operator.clone(), &left, &right)?;
@@ -174,7 +165,7 @@ impl ExprVisitor<Object> for Interpreter {
                         return Ok(Object::Bool(left <= right))
                     }
                 }
-                return Err(LoxError::null()) //TODO: change error message?
+                return Err(LoxError::null())
             },
             BANG_EQUAL => {
                 return Ok(Object::Bool(!self.is_equal(left, right)))
