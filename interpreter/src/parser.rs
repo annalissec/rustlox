@@ -5,6 +5,8 @@ use crate::expr::Expr;
 use crate::object::Object;
 use crate::error::LoxError;
 use crate::expr::*;
+use crate::stmt::Stmt;
+use crate::stmt::*;
 
 use std::rc::Rc;
 
@@ -23,24 +25,96 @@ impl Parser {
         }
     }
 
-    pub fn parse(&mut self) -> Option<Expr>{
-
-        // match self.expression() {
-        //     Ok(expr) => Some(expr),
-        //     Err(_) => None
-        // }
-        if self.had_error {
-            return None;
-        } else {
-            return Some(self.expression());
+    pub fn parse(&mut self) -> Result<Vec<Rc<Stmt>>, LoxError>{
+        let mut statements : Vec<Rc<Stmt>>= Vec::new();
+        while !self.is_at_end() {
+            statements.push(self.declaration()?)
         }
+
+        return Ok(statements);
     }
 
-    pub fn expression(&mut self) -> Expr{
-        return self.equality();
+    fn expression(&mut self) -> Result<Expr, LoxError>{
+        Ok(self.assignment()?)
     }
 
-    pub fn equality(&mut self) -> Expr {
+    fn declaration(&mut self) -> Result<Rc<Stmt>, LoxError>{
+        match self.is_match(&[VAR]) {
+            LoxError => {
+                self.synchronize();
+            }
+            _=> {
+                return Ok(Rc::new(self.var_declaration()?));
+            }
+        }
+        return Ok(self.statement()?);
+    }
+
+    fn statement(&mut self) -> Result<Rc<Stmt>, LoxError> {
+        if self.is_match(&[PRINT]) {
+            return Ok(Rc::new(self.print_statement()?));
+        }
+        if self.is_match(&[LEFT_BRACE]) {
+            return Ok(Rc::new(Stmt::Block(Rc::new(BlockStmt{statements: Rc::new(self.block()?)}))));
+        }
+         
+        return Ok(Rc::new(self.expression_statement()?));
+    }
+
+    fn print_statement(&mut self) -> Result<Stmt, LoxError> {
+        let value = self.expression();
+
+        self.consume(SEMICOLON, String::from("Expect ';' after value."))?;
+
+        return Ok(Stmt::Print(Rc::new(PrintStmt {expression: Rc::new(value?)})));
+    }
+
+    fn var_declaration(&mut self) -> Result<Rc<Stmt>, LoxError>{
+        let name = self.consume(IDENTIFIER, String::from("Expect variable name."));
+        
+        let initializer = if self.is_match(&[EQUAL]) { Some(self.expression()) } else {None};
+
+        self.consume(SEMICOLON, String::from("Expect ';' after variable declaration."));
+
+        Ok(Rc::new(Stmt::Var(Rc::new(VarStmt{name: name?, initializer: Some(Rc::new(initializer.unwrap()?))}))))
+        
+    }
+
+    fn expression_statement(&mut self) -> Result<Rc<Stmt>, LoxError> {
+        let expr = self.expression();
+
+        self.consume(SEMICOLON, String::from("Expect ';' after expression."))?;
+        
+        return Ok(Rc::new(Stmt::Expression(Rc::new(ExpressionStmt {expression: Rc::new(expr?)}))));
+    }
+
+    fn block(&self) -> Result<Vec<Rc<Stmt>>, LoxError> {
+        let mut statements = Vec::new();
+
+        while !self.check(RIGHT_BRACE) && !self.is_at_end() {
+            statements.push(self.declaration()?);
+        }
+        self.consume(RIGHT_BRACE, String::from("Expect '}' after block."));
+        Ok(statements)
+    }
+
+    fn assignment(&mut self) -> Result<Expr, LoxError> {
+        let expr = self.equality();
+        
+        if self.is_match(&[EQUAL]) {
+            let equals = self.previous();
+            let value = self.assignment();
+
+            if let Expr::Variable(expr) = expr {
+                return Ok(Expr::Assign(Rc::new(AssignExpr{name: expr.name,  value: Rc::new(value?)}))) 
+            } else {
+                return Err(LoxError::error(equals.line, String::from("Invalid assignment target.")))
+            }
+        }
+        return Ok(expr)
+    }
+
+    fn equality(&mut self) -> Expr {
         let mut expr = self.comparison();
 
         while self.is_match(&[BANG_EQUAL, EQUAL_EQUAL]) {
@@ -110,6 +184,9 @@ impl Parser {
             //TODO: idk if clone changed anything
            return Ok(Expr::Literal(Rc::new(LiteralExpr{value: self.previous().literal.clone()})));
         }
+        if self.is_match(&[IDENTIFIER]) {
+           return Ok(Expr::Variable(Rc::new(VariableExpr{name: self.previous()})));
+        }
 
         if self.is_match(&[LEFT_PAREN]) {
             let expr = self.expression();
@@ -141,7 +218,7 @@ impl Parser {
         }
     }
 
-    fn check(&mut self, t_type: TokenType) -> bool {
+    fn check(&self, t_type: TokenType) -> bool {
         if self.is_at_end() {
             return false;
         } else {
@@ -155,15 +232,15 @@ impl Parser {
         return self.previous();
     }
 
-    fn is_at_end(&mut self) -> bool {
+    fn is_at_end(&self) -> bool {
         return self.peek().t_type == EOF;
     }
 
-    fn peek(&mut self) -> Token {
+    fn peek(&self) -> Token {
         return self.tokens[self.current].clone();
     }
 
-    fn previous(&mut self) -> Token {
+    fn previous(&self) -> Token {
         return self.tokens[self.current-1].clone();
     }
 

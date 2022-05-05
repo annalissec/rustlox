@@ -63,9 +63,9 @@ impl Lox {
 
         let mut parser = Parser::new(tokens);
 
-        let expression = parser.parse();
+        let statements = parser.parse();
         
-        self.interpreter.interpret(expression.unwrap())?;
+        self.interpreter.interpret(statements)?;
 
     
         Ok(())

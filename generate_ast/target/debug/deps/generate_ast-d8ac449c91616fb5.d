@@ -1,0 +1,5 @@
+C:\Users\butte\OneDrive\rustlox\generate_ast\target\debug\deps\generate_ast-d8ac449c91616fb5.rmeta: src\main.rs
+
+C:\Users\butte\OneDrive\rustlox\generate_ast\target\debug\deps\generate_ast-d8ac449c91616fb5.d: src\main.rs
+
+src\main.rs:

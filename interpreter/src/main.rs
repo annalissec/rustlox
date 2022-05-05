@@ -12,8 +12,10 @@ mod object;
 mod scanner;
 mod error;
 mod expr;
+mod stmt;
 mod parser;
 mod interpreter;
+mod environment;
 
 
 fn main() {
