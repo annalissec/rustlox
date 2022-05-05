@@ -6,18 +6,21 @@ use crate::error::*;
 use crate::scanner;
 use crate::parser::Parser;
 use crate::astprinter::AstPrinter;
+use crate::interpreter::Interpreter;
 
 //mod scanner;
 
 #[derive(Clone, Debug)]
 pub struct Lox {
     had_error: bool,
+    interpreter: Interpreter
 }
 
 impl Lox {
     pub fn new() -> Self {
         Lox {
             had_error: false,
+            interpreter: Interpreter {}
         }
     }
 
@@ -58,19 +61,15 @@ impl Lox {
     }
 
     pub fn run(&mut self, source: String) -> Result<(), LoxError>{
-        println!("{}", source);
+        // println!("{}", source);
         let mut scanner = scanner::Scanner::new(source);
         let tokens = scanner.scan_tokens()?;
 
         let mut parser = Parser::new(tokens);
-        //let mut expression = parser.parse();
-        match parser.parse() {
-            None => {},
-            Some(expr) => {
-                let printer = AstPrinter{};
-                println!("{}", printer.print(expr)?);
-            }
-        }
+
+        let mut expression = parser.parse();
+        
+        self.interpreter.interpret(expression.unwrap());
 
     
         Ok(())

@@ -2,13 +2,22 @@ use crate::expr::*;
 use crate::object::Object;
 use crate::error::LoxError;
 use crate::tokentype::TokenType::*;
+use crate::token::Token;
 
-
+#[derive(Clone, Debug)]
 pub struct Interpreter {
 
 }
 
 impl Interpreter {
+    pub fn interpret(&self, expression: Expr) -> Result<(), LoxError> {
+        match self.evaluate(&expression) {
+            c => { 
+                println!("{}", c?);
+            }
+        }
+        Ok(())
+    }
     fn evaluate(&self, expr: &Expr) -> Result<Object, LoxError>{
         return expr.accept(self)
     }
@@ -27,6 +36,27 @@ impl Interpreter {
     fn is_equal (&self, a: Object, b: Object) -> bool {
         if a == Object::Nil && b == Object::Nil {return true;}
         if a == Object::Nil {return false;}
+
+        match (a, b) {
+            (Object::Bool(a), Object::Bool(b)) => return a == b,
+            (Object::String(a), Object::String(b)) => return a == b,
+            (Object::Number(a), Object::Number(b)) => return a == b,
+            _ => return false,
+        }
+    }
+    fn check_number_operand(&self, operator: Token, operand: &Object) -> Result<(), LoxError> {
+        match operand {
+            Object::Number(_) => {Ok(())}
+            _ => {Err(LoxError::null())} //TODO: fix not number error
+        }
+    }
+    fn check_number_operands(&self, operator: Token, left: &Object, right: &Object) -> Result<(), LoxError> {
+        match (left, right) {
+            (Object::Number(_), Object::Number(_)) => {
+                Ok(())
+            }
+            _=> Err(LoxError::null()) //TODO: fix error 
+        }
     }
 }
 
@@ -59,6 +89,7 @@ impl ExprVisitor<Object> for Interpreter {
 
         match expr.operator.t_type {
             MINUS => {
+                self.check_number_operand(expr.operator.clone(), &right)?;
                 if let Object::Number(left) = left {
                     if let Object::Number(right)= right {
                         return Ok(Object::Number(left - right))
@@ -67,6 +98,7 @@ impl ExprVisitor<Object> for Interpreter {
                 return Err(LoxError::null()) //TODO: change error message?
             }
             SLASH => {
+                self.check_number_operands(expr.operator.clone(), &left, &right)?;
                 if let Object::Number(left) = left {
                     if let Object::Number(right)= right {
                         return Ok(Object::Number(left / right))
@@ -75,6 +107,7 @@ impl ExprVisitor<Object> for Interpreter {
                 return Err(LoxError::null()) //TODO: change error message?
             }
             STAR => {
+                self.check_number_operands(expr.operator.clone(), &left, &right)?;
                 if let Object::Number(left) = left {
                     if let Object::Number(right)= right {
                         return Ok(Object::Number(left * right))
@@ -108,6 +141,7 @@ impl ExprVisitor<Object> for Interpreter {
                 }
             }
             GREATER => {
+                self.check_number_operands(expr.operator.clone(), &left, &right)?;
                 if let Object::Number(left) = left {
                     if let Object::Number(right)= right {
                         return Ok(Object::Bool(left > right))
@@ -116,6 +150,7 @@ impl ExprVisitor<Object> for Interpreter {
                 return Err(LoxError::null()) //TODO: change error message?
             },
             GREATER_EQUAL => {
+                self.check_number_operands(expr.operator.clone(), &left, &right)?;
                 if let Object::Number(left) = left {
                     if let Object::Number(right)= right {
                         return Ok(Object::Bool(left >= right))
@@ -124,6 +159,7 @@ impl ExprVisitor<Object> for Interpreter {
                 return Err(LoxError::null()) //TODO: change error message?
             },
             LESS => {
+                self.check_number_operands(expr.operator.clone(), &left, &right)?;
                 if let Object::Number(left) = left {
                     if let Object::Number(right)= right {
                         return Ok(Object::Bool(left < right))
@@ -132,6 +168,7 @@ impl ExprVisitor<Object> for Interpreter {
                 return Err(LoxError::null()) //TODO: change error message?
             },
             LESS_EQUAL => {
+                self.check_number_operands(expr.operator.clone(), &left, &right)?;
                 if let Object::Number(left) = left {
                     if let Object::Number(right)= right {
                         return Ok(Object::Bool(left <= right))
@@ -140,20 +177,10 @@ impl ExprVisitor<Object> for Interpreter {
                 return Err(LoxError::null()) //TODO: change error message?
             },
             BANG_EQUAL => {
-                if let Object::Number(left) = left {
-                    if let Object::Number(right)= right {
-                        return Ok(Object::Bool(!self.is_equal(left, right)))
-                    }
-                }
-                return Err(LoxError::null()) //TODO: change error message?
+                return Ok(Object::Bool(!self.is_equal(left, right)))
             },
             EQUAL_EQUAL => {
-                if let Object::Number(left) = left {
-                    if let Object::Number(right)= right {
-                        return Ok(Object::Bool(self.is_equal(left.clone(), right.clone())))
-                    }
-                }
-                return Err(LoxError::null()) //TODO: change error message?
+                return Ok(Object::Bool(self.is_equal(left, right)))
             },
             _ => {
                 Err(LoxError::Null)
