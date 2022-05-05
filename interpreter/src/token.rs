@@ -29,10 +29,13 @@ impl Token {
 
 impl fmt::Display for Token {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?} {} {}", self.t_type, self.lexeme, if let Some(literal) = &self.literal {
-            literal
+        write!(f, "{:?} {} {}", 
+        self.t_type, 
+        self.lexeme, 
+        if let Some(literal) = &self.literal {
+            literal.to_string()
         }else {
-            &Object::Nil
+            String::from("nil")
         })
     }
 }

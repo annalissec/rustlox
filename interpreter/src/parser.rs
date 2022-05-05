@@ -107,7 +107,8 @@ impl Parser {
         }
 
         if self.is_match(&[NUMBER, STRING]) {
-           return Ok(Expr::Literal(Rc::new(LiteralExpr{value: Some(self.previous().literal.unwrap())})));
+            //TODO: idk if clone changed anything
+           return Ok(Expr::Literal(Rc::new(LiteralExpr{value: self.previous().literal.clone()})));
         }
 
         if self.is_match(&[LEFT_PAREN]) {
