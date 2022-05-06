@@ -27,8 +27,9 @@ impl Environment {
         }
     }
 
-    pub fn define(&self, name: String, value: Object) {
-        self.values.clone().insert(name, value);
+    pub fn define(&mut self, name: &str, value: Object) {
+        self.values.insert(name.to_string(), value);
+        //println!("{:?}", self.values);
         return;
     }
 
@@ -36,7 +37,7 @@ impl Environment {
         if let Some(object) = self.values.get(&name.lexeme) {
             return Ok(object.clone());
         } 
-        if self.enclosing.clone() != None {
+        else if self.enclosing.clone() != None {
             return Ok(self.enclosing.as_ref().unwrap().borrow().get(name)?);
         }
         else {

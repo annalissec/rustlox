@@ -65,10 +65,13 @@ impl Lox {
         let mut parser = Parser::new(tokens);
 
         let statements = parser.parse();
+
+        //println!("{:?}\n", parser.tokens);
         
         self.interpreter.interpret(statements?)?;
 
     
         return Ok(());
     }
+    
 }

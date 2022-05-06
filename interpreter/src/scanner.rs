@@ -81,6 +81,7 @@ impl Scanner {
     //TODO: fix error return 
     fn scan_token(&mut self) -> Result<(), LoxError> {
         let c = self.advance();
+
         
         match c {
             '(' => self.add_token(TokenType::LEFT_PAREN),
@@ -206,9 +207,7 @@ impl Scanner {
             if peek_var == '\n' {
                 self.line = self.line + 1;
             }
-            if !self.is_at_end() {
                 self.advance();
-            }
             peek_var = self.peek();
         }
 

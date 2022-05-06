@@ -15,7 +15,7 @@ use std::rc::Rc;
 
 #[derive(Debug, Clone)]
 pub struct Parser {
-    tokens: Vec<Token>,
+    pub tokens: Vec<Token>,
     current: usize,
     had_error: bool,
 }

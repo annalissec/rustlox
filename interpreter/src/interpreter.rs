@@ -47,7 +47,6 @@ impl Interpreter {
     fn execute_block(&self, statements: &Rc<Vec<Rc<Stmt>>>, 
         environment: Environment // environment: RefCell<Rc<RefCell<Environment>>>
     ) -> Result<(), LoxError> {
-
         let previous = self.environment.replace(Rc::new(RefCell::new(environment)));
 
         let result = statements.iter().try_for_each(|statement| self.execute(statement.clone()));
@@ -247,13 +246,13 @@ impl StmtVisitor<()> for Interpreter {
             Object::Nil
         };
     
-    
-        self.environment.borrow().borrow_mut().define(stmt.name.to_string(), value);
+        self.environment.borrow().borrow_mut().define(&stmt.name.lexeme.to_owned(), value);
         Ok(())
     }
 
     fn visit_block_stmt(&self, stmt: &BlockStmt) -> Result<(), LoxError>{ //enclosing: Rc<RefCell<Environment>>
-        self.execute_block(&stmt.statements, Environment::new_enclosing(self.environment.borrow().clone()))? ;
+        let re_init = Environment::new_enclosing(self.environment.borrow().clone());
+        self.execute_block(&stmt.statements, re_init )? ;
         return Ok(());
     }
 }
