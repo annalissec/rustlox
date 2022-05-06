@@ -1,0 +1,12 @@
+var i = 5;
+while (i >= 0) {
+    print i;
+    i = i - 1;
+}
+
+// Number(5.0)
+// Number(4.0)
+// Number(3.0)
+// Number(2.0)
+// Number(1.0)
+// Number(0.0)

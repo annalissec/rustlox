@@ -95,13 +95,83 @@ impl Interpreter {
     }
 }
 
+impl StmtVisitor<()> for Interpreter {
+
+    fn visit_expression_stmt(&self, stmt: &ExpressionStmt) -> Result<(), LoxError> {
+        self.evaluate(stmt.expression.clone())?;
+        return Ok(());
+    }
+
+    fn visit_print_stmt(&self, stmt: &PrintStmt) -> Result<(), LoxError>{
+        let value = self.evaluate(stmt.expression.clone())?;
+        println!("{:?}", value);
+        return Ok(());
+    }
+
+    fn visit_while_stmt(&self, stmt: &WhileStmt) -> Result<(), LoxError> {
+        let mut eval = self.evaluate(stmt.condition.clone())?;
+
+        while self.is_truthy(&eval) {
+            self.execute(stmt.body.clone())?;
+            eval = self.evaluate(stmt.condition.clone())?;
+        }
+        Ok(())
+    }
+
+    fn visit_var_stmt(&self, stmt: &VarStmt) -> Result<(), LoxError>{
+        let value = if let Some(initializer) = stmt.initializer.clone() {
+            self.evaluate(initializer)?
+        } else {
+            Object::Nil
+        };
+    
+        self.environment.borrow().borrow_mut().define(&stmt.name.lexeme.to_owned(), value);
+        Ok(())
+    }
+
+    fn visit_block_stmt(&self, stmt: &BlockStmt) -> Result<(), LoxError>{ //enclosing: Rc<RefCell<Environment>>
+        let re_init = Environment::new_enclosing(self.environment.borrow().clone());
+        self.execute_block(&stmt.statements, re_init )? ;
+        return Ok(());
+    }
+
+    fn visit_if_stmt(&self, stmt: &IfStmt) -> Result<(), LoxError> {
+        let eval = self.evaluate(stmt.condition.clone())?;
+        match self.is_truthy(&eval) {
+            true => self.execute(stmt.then_branch.clone()),
+            false => {
+                match stmt.else_branch.clone() {
+                    None => Ok(()),
+                    Some(x) => {
+                        self.execute(x)
+    }}}}} // so ugly but it bothered me 
+}
+
 impl ExprVisitor<Object> for Interpreter {
+
     fn visit_literal_expr(&self, expr: &LiteralExpr) -> Result<Object, LoxError>{
         Ok(expr.value.clone().unwrap())
     }
+
+    fn visit_logical_expr(&self, expr: &LogicalExpr) -> Result<Object, LoxError> {
+        let left = RefCell::new(self.evaluate(expr.left.clone())?);
+
+        if expr.operator.t_type == OR {
+            if self.is_truthy(&left.clone().borrow()) {
+                return Ok(left.into_inner());
+            } else {}
+        } else {
+            if !self.is_truthy(&left.clone().borrow()) {
+                return Ok(left.into_inner());
+            } else {}
+        }
+        Ok(self.evaluate(expr.right.clone())?)
+    }
+
     fn visit_grouping_expr(&self, expr: &GroupingExpr) -> Result<Object, LoxError> {
         Ok(self.evaluate(expr.expression.clone())?)
     }
+
     fn visit_unary_expr(&self, expr: &UnaryExpr) -> Result<Object, LoxError> {
         let right = self.evaluate(expr.right.clone())?;
 
@@ -121,6 +191,7 @@ impl ExprVisitor<Object> for Interpreter {
             }
         }
     }
+
     fn visit_binary_expr(&self, expr: &BinaryExpr) -> Result<Object, LoxError>{
         let left = self.evaluate(expr.left.clone())?;
         let right = self.evaluate(expr.right.clone())?;
@@ -228,31 +299,3 @@ impl ExprVisitor<Object> for Interpreter {
         return Ok(value?);
     }
 }   
-
-impl StmtVisitor<()> for Interpreter {
-    fn visit_expression_stmt(&self, stmt: &ExpressionStmt) -> Result<(), LoxError> {
-        self.evaluate(stmt.expression.clone())?;
-        return Ok(());
-    }
-    fn visit_print_stmt(&self, stmt: &PrintStmt) -> Result<(), LoxError>{
-        let value = self.evaluate(stmt.expression.clone())?;
-        println!("{:?}", value);
-        return Ok(());
-    }
-    fn visit_var_stmt(&self, stmt: &VarStmt) -> Result<(), LoxError>{
-        let value = if let Some(initializer) = stmt.initializer.clone() {
-            self.evaluate(initializer)?
-        } else {
-            Object::Nil
-        };
-    
-        self.environment.borrow().borrow_mut().define(&stmt.name.lexeme.to_owned(), value);
-        Ok(())
-    }
-
-    fn visit_block_stmt(&self, stmt: &BlockStmt) -> Result<(), LoxError>{ //enclosing: Rc<RefCell<Environment>>
-        let re_init = Environment::new_enclosing(self.environment.borrow().clone());
-        self.execute_block(&stmt.statements, re_init )? ;
-        return Ok(());
-    }
-}

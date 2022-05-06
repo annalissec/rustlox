@@ -24,7 +24,7 @@ pub fn generate_ast(output_dir: &str) -> io::Result<()> {
             //"Get      : Rc<Expr> object, Token name",
             "Grouping : Rc<Expr> expression",
             "Literal  : Option<Object> value",
-            //"Logical  : Rc<Expr> left, Token operator, Rc<Expr> right",
+            "Logical  : Rc<Expr> left, Token operator, Rc<Expr> right",
             //"Set      : Rc<Expr> object, Token name, Rc<Expr> value",
             "Unary    : Token operator, Rc<Expr> right",
             "Variable : Token name",
@@ -37,14 +37,15 @@ pub fn generate_ast(output_dir: &str) -> io::Result<()> {
     &["error", "expr", "token", "rc"],
     &[
         "Block      : Rc<Vec<Rc<Stmt>>> statements",
-        // "Break      : Token token",
+        //"Break      : Token token",
+        //"Continue   : Token token",
         "Expression : Rc<Expr> expression",
         // "Function   : Token name, Rc<Vec<Token>> params, Rc<Vec<Rc<Stmt>>> body",
-        // "If         : Rc<Expr> condition, Rc<Stmt> then_branch, Option<Rc<Stmt>> else_branch",
+        "If         : Rc<Expr> condition, Rc<Stmt> then_branch, Option<Rc<Stmt>> else_branch",
         "Print      : Rc<Expr> expression",
         // "Return     : Token keyword, Option<Rc<Expr>> value",
         "Var        : Token name, Option<Rc<Expr>> initializer",
-        // "While      : Rc<Expr> condition, Rc<Stmt> body",
+        "While      : Rc<Expr> condition, Rc<Stmt> body",
     ],
 )?;
 

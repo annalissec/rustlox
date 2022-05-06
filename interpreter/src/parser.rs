@@ -10,6 +10,7 @@ use crate::stmt::Stmt;
 use crate::stmt::*;
 use crate::token::Token;
 
+
 use std::rc::Rc;
 
 
@@ -62,14 +63,125 @@ impl Parser {
     }
 
     fn statement(&mut self) -> Result<Rc<Stmt>, LoxError> {
-        if self.is_match(&[PRINT]) {
-            return Ok(Rc::new(self.print_statement()?));
-        }
+        
         if self.is_match(&[LEFT_BRACE]) {
             return Ok(Rc::new(Stmt::Block(Rc::new(BlockStmt{statements: Rc::new(self.block()?)}))));
         }
+        if self.is_match(&[PRINT]) {
+            return Ok(Rc::new(self.print_statement()?));
+        }
+        if self.is_match(&[IF]) {
+            return Ok(Rc::new(self.if_statement()?));
+        }
+        if self.is_match(&[WHILE]) {
+            return Ok(Rc::new(self.while_statement()?));
+        }
+        if self.is_match(&[FOR]) {
+            return Ok(self.for_statement()?);
+        }
+
+        // if self.is_match(&[BREAK]) {
+        //     return Ok(Rc::new(self.break_statement()));
+        // }
+        // if self.is_match(&[CONTINUE]) {
+        //     return Ok(Rc::new(self.continue_statement()?));
+        // }
          
         return Ok(self.expression_statement()?);
+    }
+
+    // fn break_statement(&mut self) -> Result<Stmt, LoxError> {
+        
+    // }
+
+    fn for_statement(&mut self) -> Result<Rc<Stmt>, LoxError> {
+        self.consume(LEFT_PAREN, String::from("Expect '(' after 'for'."))?;
+
+        let initializer = 
+            if self.is_match(&[SEMICOLON]) {
+                None
+            } else if self.is_match(&[VAR]) {
+                Some(self.var_declaration()?)
+            } else {
+                Some(self.expression_statement()?)
+            };
+        
+        let mut condition = 
+            if !self.check(SEMICOLON) {
+                Some(self.expression()?)
+            } else {
+                None
+            };
+
+        self.consume(SEMICOLON, String::from("Expect ';' after loop condition."))?;
+
+        let increment = 
+            if !self.check(RIGHT_PAREN) {
+                Some(self.expression()?)
+            } else {
+                None
+            };
+        
+        self.consume(RIGHT_PAREN, String::from("Expect ')' after for clauses."))?;
+        let mut body = self.statement()?;
+
+        
+        match increment {
+            None => {},
+            Some(inc) => {
+                body = Rc::new(Stmt::Block(Rc::new(BlockStmt{
+                    statements: Rc::new(vec!(body, Rc::new(Stmt::Expression(Rc::new(ExpressionStmt{
+                        expression: Rc::new(inc)
+                    })))))
+                })))
+            }
+        }
+
+        match condition {
+            None => {
+                condition = Some(Expr::Literal(Rc::new(LiteralExpr{
+                    value: Some(Object::Bool(false))
+                })))
+            }
+            _ => {}
+        }
+
+        body = Rc::new(Stmt::While(Rc::new(WhileStmt{
+            condition: Rc::new(condition.unwrap()),
+            body
+        })));
+
+        match initializer {
+            None => {},
+            Some(initializer) => {
+                body = Rc::new(Stmt::Block(Rc::new(BlockStmt{
+                    statements: Rc::new(vec!(initializer, body))
+                })))
+            }
+        }
+
+        Ok(body.clone())
+    }
+
+    fn if_statement(&mut self) -> Result<Stmt, LoxError>{
+        self.consume(LEFT_PAREN, String::from("Expect '(' after 'if'."))?;
+        let condition = self.expression();
+
+        self.consume(RIGHT_PAREN, String::from("Expect ')' after if condition."))?;
+
+        let then_branch = self.statement();
+        let else_branch = 
+            if self.is_match(&[ELSE]) {
+                Some(self.statement()?)
+            }
+            else {
+                None
+            };
+
+        Ok(Stmt::If(Rc::new(IfStmt{
+            condition: Rc::new(condition?), 
+            then_branch: then_branch?, 
+            else_branch: else_branch})))
     }
 
     fn print_statement(&mut self) -> Result<Stmt, LoxError> {
@@ -79,6 +191,19 @@ impl Parser {
 
         return Ok(Stmt::Print(Rc::new(PrintStmt {expression: Rc::new(value?)})));
     }
+    
+    fn while_statement(&mut self) -> Result<Stmt, LoxError> {
+        self.consume(LEFT_PAREN, String::from("Expect '(' after 'while'."))?;
+        let condition = self.expression()?;
+        self.consume(RIGHT_PAREN, String::from("Expect ')' after condition."))?;
+        let body = self.statement()?;
+
+        return Ok(Stmt::While(Rc::new(WhileStmt{
+            condition: Rc::new(condition),
+            body
+        })));
+
+    }
 
     fn var_declaration(&mut self) -> Result<Rc<Stmt>, LoxError>{
         let name = self.consume(IDENTIFIER, String::from("Expect variable name."));
@@ -87,7 +212,16 @@ impl Parser {
 
         self.consume(SEMICOLON, String::from("Expect ';' after variable declaration."))?;
 
-        Ok(Rc::new(Stmt::Var(Rc::new(VarStmt{name: name?, initializer: Some(Rc::new(initializer.unwrap()?))}))))
+        Ok(Rc::new(Stmt::Var(Rc::new(VarStmt{name: name?, initializer: Some(Rc::new(
+            match initializer {
+                None => {Expr::Literal(Rc::new(LiteralExpr{
+                    value: Some(Object::Nil)
+                }))}
+                Some(initializer) => {
+                    initializer?
+                }
+            }
+        ))}))))
         
     }
 
@@ -110,7 +244,7 @@ impl Parser {
     }
 
     fn assignment(&mut self) -> Result<Expr, LoxError> {
-        let expr = self.equality()?;
+        let expr = self.or()?;
         
         if self.is_match(&[EQUAL]) {
             let equals = self.previous();
@@ -124,6 +258,37 @@ impl Parser {
             }
         }
         return Ok(expr);
+    }
+
+    fn or(&mut self) -> Result<Expr, LoxError> {
+        let mut expr = self.and()?;
+
+        while self.is_match(&[OR]) {
+            let operator = self.previous();
+            let right = self.and()?;
+
+            expr = Expr::Logical(Rc::new(LogicalExpr{
+                left: Rc::new(expr),
+                operator,
+                right: Rc::new(right)
+            })
+        )}
+        Ok(expr)
+    }
+
+    fn and(&mut self) -> Result<Expr, LoxError> {
+        let mut expr = self.equality()?;
+
+        while self.is_match(&[AND]) {
+            let operator = self.previous();
+            let right = self.equality()?;
+            expr = Expr::Logical(Rc::new(LogicalExpr{
+                left: Rc::new(expr),
+                operator,
+                right: Rc::new(right)
+            }) 
+        )}
+        Ok(expr)
     }
 
     fn equality(&mut self) -> Result<Expr, LoxError> {

@@ -43,6 +43,7 @@ impl Scanner {
             "var" => Some(TokenType::VAR),
             "while" => Some(TokenType::WHILE),
             "break" => Some(TokenType::BREAK),
+            "continue" => Some(TokenType::CONTINUE),
             _ => None,
         }
     }

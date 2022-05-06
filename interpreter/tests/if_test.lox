@@ -1,0 +1,14 @@
+if (true) {
+    print "true";
+} else {
+    print "false";
+}
+//String("true")
+
+if (false) {
+    print "true";
+} else {
+    print "false";
+}
+
+//String("false")

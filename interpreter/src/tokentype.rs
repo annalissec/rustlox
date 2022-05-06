@@ -18,7 +18,7 @@ pub enum TokenType {
 
   // Keywords.
   AND, ELSE, FALSE, FUN, FOR, IF, NIL, OR,
-  PRINT, RETURN, TRUE, VAR, WHILE, BREAK,
+  PRINT, RETURN, TRUE, VAR, WHILE, BREAK, CONTINUE,
 
   EOF
 }

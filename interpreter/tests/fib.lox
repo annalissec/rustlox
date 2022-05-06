@@ -1,0 +1,30 @@
+var a = 0;
+var temp;
+
+for (var b = 1; a < 10000; b = temp + b) {
+  print a;
+  temp = a;
+  a = b;
+}
+
+// Number(0.0)
+// Number(1.0)
+// Number(1.0)
+// Number(2.0)
+// Number(3.0)
+// Number(5.0)
+// Number(8.0)
+// Number(13.0)
+// Number(21.0)
+// Number(34.0)
+// Number(55.0)
+// Number(89.0)
+// Number(144.0)
+// Number(233.0)
+// Number(377.0)
+// Number(610.0)
+// Number(987.0)
+// Number(1597.0)
+// Number(2584.0)
+// Number(4181.0)
+// Number(6765.0)
