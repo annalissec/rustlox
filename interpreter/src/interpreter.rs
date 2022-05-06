@@ -102,6 +102,14 @@ impl StmtVisitor<()> for Interpreter {
         return Ok(());
     }
 
+    fn visit_break_stmt(&self, _stmt: &BreakStmt) -> Result<(), LoxError> {
+        Err(LoxError::break_error())
+    }
+
+    fn visit_continue_stmt(&self, _stmt: &ContinueStmt) -> Result<(), LoxError> {
+        Err(LoxError::continue_error())
+    }
+
     fn visit_print_stmt(&self, stmt: &PrintStmt) -> Result<(), LoxError>{
         let value = self.evaluate(stmt.expression.clone())?;
         println!("{:?}", value);
@@ -109,13 +117,22 @@ impl StmtVisitor<()> for Interpreter {
     }
 
     fn visit_while_stmt(&self, stmt: &WhileStmt) -> Result<(), LoxError> {
-        let mut eval = self.evaluate(stmt.condition.clone())?;
-
-        while self.is_truthy(&eval) {
-            self.execute(stmt.body.clone())?;
-            eval = self.evaluate(stmt.condition.clone())?;
+        while self.is_truthy(&self.evaluate(stmt.condition.clone())?) {
+            match self.execute(stmt.body.clone()) {
+                Err(LoxError::BreakError) => break,
+                Err(LoxError::ContinueError) => {
+                    if stmt.is_for_loop {
+                        let _body = stmt.body.as_ref();
+                        //TODO: Im not sure if this is possible with my code setup???
+                    }
+                },
+                Err(e) => return Err(e),
+                Ok(_) => {}
+            }
         }
+
         Ok(())
+    
     }
 
     fn visit_var_stmt(&self, stmt: &VarStmt) -> Result<(), LoxError>{
@@ -148,6 +165,30 @@ impl StmtVisitor<()> for Interpreter {
 }
 
 impl ExprVisitor<Object> for Interpreter {
+
+    fn visit_call_expr(&self, expr: &CallExpr) -> Result<Object, LoxError> {
+        let callee = self.evaluate(expr.callee.clone())?;
+
+        let mut arguments = Vec::new();
+
+        for argument in expr.arguments.clone() {
+            arguments.push(self.evaluate(argument)?);
+        }
+        
+        if let Object::Func(function) = callee {
+            if arguments.len() != function.function.arity(){
+                Err(LoxError::runtime_error(&expr.paren, String::from(format!("Expectd {} but got {}.", 
+                    function.function.arity(), 
+                    arguments.len()))))
+                } else {
+                    Ok(function.function.call(self, arguments)?)
+                }
+            }
+        else {
+            Err(LoxError::runtime_error(&expr.paren, String::from("Can only call functions or classes")))
+        }
+
+    }
 
     fn visit_literal_expr(&self, expr: &LiteralExpr) -> Result<Object, LoxError>{
         Ok(expr.value.clone().unwrap())

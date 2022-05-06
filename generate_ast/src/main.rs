@@ -20,7 +20,7 @@ pub fn generate_ast(output_dir: &str) -> io::Result<()> {
         &[
             "Assign   : Token name, Rc<Expr> value",
             "Binary   : Rc<Expr> left, Token operator, Rc<Expr> right",
-            //"Call     : Rc<Expr> callee, Token paren, Vec<Rc<Expr>> arguments",
+            "Call     : Rc<Expr> callee, Token paren, Vec<Rc<Expr>> arguments",
             //"Get      : Rc<Expr> object, Token name",
             "Grouping : Rc<Expr> expression",
             "Literal  : Option<Object> value",
@@ -37,15 +37,15 @@ pub fn generate_ast(output_dir: &str) -> io::Result<()> {
     &["error", "expr", "token", "rc"],
     &[
         "Block      : Rc<Vec<Rc<Stmt>>> statements",
-        //"Break      : Token token",
-        //"Continue   : Token token",
+        "Break      : Token token",
+        "Continue   : Token token",
         "Expression : Rc<Expr> expression",
         // "Function   : Token name, Rc<Vec<Token>> params, Rc<Vec<Rc<Stmt>>> body",
         "If         : Rc<Expr> condition, Rc<Stmt> then_branch, Option<Rc<Stmt>> else_branch",
         "Print      : Rc<Expr> expression",
         // "Return     : Token keyword, Option<Rc<Expr>> value",
         "Var        : Token name, Option<Rc<Expr>> initializer",
-        "While      : Rc<Expr> condition, Rc<Stmt> body",
+        "While      : Rc<Expr> condition, Rc<Stmt> body, bool is_for_loop",
     ],
 )?;
 

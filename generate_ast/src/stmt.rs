@@ -5,6 +5,8 @@ use std::rc::Rc;
 
 pub enum Stmt {
     Block(Rc<BlockStmt>),
+    Break(Rc<BreakStmt>),
+    Continue(Rc<ContinueStmt>),
     Expression(Rc<ExpressionStmt>),
     If(Rc<IfStmt>),
     Print(Rc<PrintStmt>),
@@ -16,6 +18,8 @@ impl Stmt {
     pub fn accept<T>(&self, stmt_visitor: &dyn StmtVisitor<T>) -> Result<T, LoxError> {
         match self {
             Stmt::Block(v) => v.accept(stmt_visitor),
+            Stmt::Break(v) => v.accept(stmt_visitor),
+            Stmt::Continue(v) => v.accept(stmt_visitor),
             Stmt::Expression(v) => v.accept(stmt_visitor),
             Stmt::If(v) => v.accept(stmt_visitor),
             Stmt::Print(v) => v.accept(stmt_visitor),
@@ -27,6 +31,8 @@ impl Stmt {
 
 pub trait StmtVisitor<T> {
     fn visit_block_stmt(&self, stmt: &BlockStmt) -> Result<T, LoxError>;
+    fn visit_break_stmt(&self, stmt: &BreakStmt) -> Result<T, LoxError>;
+    fn visit_continue_stmt(&self, stmt: &ContinueStmt) -> Result<T, LoxError>;
     fn visit_expression_stmt(&self, stmt: &ExpressionStmt) -> Result<T, LoxError>;
     fn visit_if_stmt(&self, stmt: &IfStmt) -> Result<T, LoxError>;
     fn visit_print_stmt(&self, stmt: &PrintStmt) -> Result<T, LoxError>;
@@ -36,6 +42,14 @@ pub trait StmtVisitor<T> {
 
 pub struct BlockStmt {
     pub statements: Rc<Vec<Rc<Stmt>>>,
+}
+
+pub struct BreakStmt {
+    pub token: Token,
+}
+
+pub struct ContinueStmt {
+    pub token: Token,
 }
 
 pub struct ExpressionStmt {
@@ -60,11 +74,24 @@ pub struct VarStmt {
 pub struct WhileStmt {
     pub condition: Rc<Expr>,
     pub body: Rc<Stmt>,
+    pub is_for_loop: bool,
 }
 
 impl BlockStmt {
     pub fn accept<T>(&self, visitor: &dyn StmtVisitor<T>) -> Result<T, LoxError> {
         visitor.visit_block_stmt(self)
+    }
+}
+
+impl BreakStmt {
+    pub fn accept<T>(&self, visitor: &dyn StmtVisitor<T>) -> Result<T, LoxError> {
+        visitor.visit_break_stmt(self)
+    }
+}
+
+impl ContinueStmt {
+    pub fn accept<T>(&self, visitor: &dyn StmtVisitor<T>) -> Result<T, LoxError> {
+        visitor.visit_continue_stmt(self)
     }
 }
 

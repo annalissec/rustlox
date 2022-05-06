@@ -1,5 +1,7 @@
 
 use std::fmt;
+use std::rc::Rc;
+use crate::loxcallable::Callable;
 
 
 #[derive(Debug, Clone, PartialEq)]
@@ -7,6 +9,7 @@ pub enum Object {
     String(String),
     Number(f64),
     Bool(bool),
+    Func(Rc<Callable>),
     Nil,
 }
 
@@ -23,6 +26,7 @@ impl fmt::Display for Object {
                 }
             }
             Object::Nil => write!(f, "nil"),
+            Object::Func(function) => write!(f, "{function}"),
         }
     }
 }

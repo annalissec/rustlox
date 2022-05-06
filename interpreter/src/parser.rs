@@ -19,6 +19,7 @@ pub struct Parser {
     pub tokens: Vec<Token>,
     current: usize,
     had_error: bool,
+    loop_depth: usize
 }
 
 impl Parser {
@@ -26,7 +27,8 @@ impl Parser {
         Parser {
             tokens,
             current: 0,
-            had_error: false
+            had_error: false,
+            loop_depth: 0
         }
     }
 
@@ -79,20 +81,25 @@ impl Parser {
         if self.is_match(&[FOR]) {
             return Ok(self.for_statement()?);
         }
-
-        // if self.is_match(&[BREAK]) {
-        //     return Ok(Rc::new(self.break_statement()));
-        // }
-        // if self.is_match(&[CONTINUE]) {
-        //     return Ok(Rc::new(self.continue_statement()?));
-        // }
+        if self.is_match(&[BREAK]) {
+            return Ok(Rc::new(self.break_statement()?));
+        }
+        if self.is_match(&[CONTINUE]) {
+            return Ok(Rc::new(self.continue_statement()?));
+        }
          
         return Ok(self.expression_statement()?);
     }
 
-    // fn break_statement(&mut self) -> Result<Stmt, LoxError> {
-        
-    // }
+    fn break_statement(&mut self) -> Result<Stmt, LoxError> {
+        self.consume(SEMICOLON, String::from("Expect ';' after 'break'."))?;
+        Ok(Stmt::Break(Rc::new(BreakStmt{token: Token::new(BREAK, String::from(""), Some(Object::Nil), 0)})))
+    }
+
+    fn continue_statement(&mut self) -> Result<Stmt, LoxError> {
+        self.consume(SEMICOLON, String::from("Expect ';' after 'continue'."))?;
+        Ok(Stmt::Continue(Rc::new(ContinueStmt{token: Token::new(CONTINUE, String::from(""), Some(Object::Nil), 0)})))
+    }
 
     fn for_statement(&mut self) -> Result<Rc<Stmt>, LoxError> {
         self.consume(LEFT_PAREN, String::from("Expect '(' after 'for'."))?;
@@ -123,42 +130,49 @@ impl Parser {
             };
         
         self.consume(RIGHT_PAREN, String::from("Expect ')' after for clauses."))?;
-        let mut body = self.statement()?;
 
-        
-        match increment {
-            None => {},
-            Some(inc) => {
-                body = Rc::new(Stmt::Block(Rc::new(BlockStmt{
-                    statements: Rc::new(vec!(body, Rc::new(Stmt::Expression(Rc::new(ExpressionStmt{
-                        expression: Rc::new(inc)
-                    })))))
-                })))
+        let try_body = | | -> Result<Rc<Stmt>, LoxError> {
+            self.loop_depth += 1;
+            let mut body = self.statement()?;
+            
+            match increment {
+                None => {},
+                Some(inc) => {
+                    body = Rc::new(Stmt::Block(Rc::new(BlockStmt{
+                        statements: Rc::new(vec!(body, Rc::new(Stmt::Expression(Rc::new(ExpressionStmt{
+                            expression: Rc::new(inc)
+                        })))))
+                    })))
+                }
             }
-        }
 
-        match condition {
-            None => {
-                condition = Some(Expr::Literal(Rc::new(LiteralExpr{
-                    value: Some(Object::Bool(false))
-                })))
+            match condition {
+                None => {
+                    condition = Some(Expr::Literal(Rc::new(LiteralExpr{
+                        value: Some(Object::Bool(false))
+                    })))
+                }
+                _ => {}
             }
-            _ => {}
-        }
 
-        body = Rc::new(Stmt::While(Rc::new(WhileStmt{
-            condition: Rc::new(condition.unwrap()),
-            body
-        })));
+            body = Rc::new(Stmt::While(Rc::new(WhileStmt{
+                condition: Rc::new(condition.unwrap()),
+                body,
+                is_for_loop: true
+            })));
 
-        match initializer {
-            None => {},
-            Some(initializer) => {
-                body = Rc::new(Stmt::Block(Rc::new(BlockStmt{
-                    statements: Rc::new(vec!(initializer, body))
-                })))
+            match initializer {
+                None => {},
+                Some(initializer) => {
+                    body = Rc::new(Stmt::Block(Rc::new(BlockStmt{
+                        statements: Rc::new(vec!(initializer, body))
+                    })))
+                }
             }
-        }
+            Ok(body)
+        };
+
+        let body = try_body()?;
 
         Ok(body.clone())
     }
@@ -198,9 +212,11 @@ impl Parser {
         self.consume(RIGHT_PAREN, String::from("Expect ')' after condition."))?;
         let body = self.statement()?;
 
+        self.loop_depth+= 1;
         return Ok(Stmt::While(Rc::new(WhileStmt{
             condition: Rc::new(condition),
-            body
+            body,
+            is_for_loop: false
         })));
 
     }
@@ -343,7 +359,45 @@ impl Parser {
             let right = self.unary();
             return Ok(Expr::Unary(Rc::new(UnaryExpr {operator: operator, right: Rc::new(right?)})));
         }
-            Ok(self.primary()?)
+            Ok(self.call()?)
+    }
+
+    fn finish_call(&mut self, callee: Expr) -> Result<Expr, LoxError> {
+        let mut arguments = Vec::new();
+
+        if !self.check(RIGHT_PAREN) {
+            loop {
+                if arguments.len() >= 255 {
+                    let peek_var = self.peek();
+                    self.error(peek_var, String::from("Can't have more than 255 arguments."));
+                }
+                arguments.push(Rc::new(self.expression()?));
+                if !self.is_match(&[COMMA]) {
+                    break;
+                }
+            }
+        } else {}
+
+        let paren = self.consume(RIGHT_PAREN, String::from("Expect ')' after arguments."));
+
+        Ok(Expr::Call(Rc::new(CallExpr{
+            callee: Rc::new(callee),
+            paren: paren?,
+            arguments: arguments
+        })))
+    }
+
+    fn call(&mut self) -> Result<Expr, LoxError> {
+        let mut expr = self.primary();
+
+        loop {
+            if self.is_match(&[LEFT_PAREN]) {
+                expr = self.finish_call(expr?);
+            } else {
+                break;
+            }
+        }
+        Ok(expr?)
     }
 
     fn primary(&mut self) -> Result<Expr, LoxError>{

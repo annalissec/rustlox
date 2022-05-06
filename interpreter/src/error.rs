@@ -8,10 +8,18 @@ pub enum LoxError {
     Error { line: usize, message: String },
     ParseError {token: Token, message: String},
     RuntimeError {operator: Token, message: String},
+    BreakError,
+    ContinueError,
     Null
 }
 
 impl LoxError {
+    pub fn break_error() -> LoxError{
+        LoxError::BreakError
+    }
+    pub fn continue_error() -> LoxError{
+        LoxError::ContinueError
+    }
     pub fn error(line: usize, message: String) -> LoxError{
         let mut err = LoxError::Error {
             line, message
@@ -65,6 +73,10 @@ impl LoxError {
             }
             LoxError::RuntimeError {operator, message} => {
                 eprintln!("{} [line {}]", message, operator.line)
+            }
+            LoxError::ContinueError => {
+            }
+            LoxError::BreakError => {
             }
             LoxError::Null => {
                 panic!("IDK bro")

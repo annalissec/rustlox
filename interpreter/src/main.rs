@@ -16,6 +16,7 @@ mod stmt;
 mod parser;
 mod interpreter;
 mod environment;
+mod loxcallable;
 
 
 fn main() {

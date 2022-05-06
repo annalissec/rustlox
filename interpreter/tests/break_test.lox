@@ -1,0 +1,19 @@
+var i = 0;
+while (i < 10)
+{
+    for (; i != 5; i = i + 1)
+        if (i == 2 or i == 7 or i == 12)
+            break;
+        else
+            print i;
+    i = i + 3;
+}
+print "Done";
+
+// Number(0.0)
+// Number(1.0)
+// Number(8.0)
+// Number(9.0)
+// Number(10.0)
+// Number(11.0)
+// String("Done")

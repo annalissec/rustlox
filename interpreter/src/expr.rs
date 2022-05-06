@@ -6,6 +6,7 @@ use std::rc::Rc;
 pub enum Expr {
     Assign(Rc<AssignExpr>),
     Binary(Rc<BinaryExpr>),
+    Call(Rc<CallExpr>),
     Grouping(Rc<GroupingExpr>),
     Literal(Rc<LiteralExpr>),
     Logical(Rc<LogicalExpr>),
@@ -18,6 +19,7 @@ impl Expr {
         match self {
             Expr::Assign(v) => v.accept(expr_visitor),
             Expr::Binary(v) => v.accept(expr_visitor),
+            Expr::Call(v) => v.accept(expr_visitor),
             Expr::Grouping(v) => v.accept(expr_visitor),
             Expr::Literal(v) => v.accept(expr_visitor),
             Expr::Logical(v) => v.accept(expr_visitor),
@@ -30,6 +32,7 @@ impl Expr {
 pub trait ExprVisitor<T> {
     fn visit_assign_expr(&self, expr: &AssignExpr) -> Result<T, LoxError>;
     fn visit_binary_expr(&self, expr: &BinaryExpr) -> Result<T, LoxError>;
+    fn visit_call_expr(&self, expr: &CallExpr) -> Result<T, LoxError>;
     fn visit_grouping_expr(&self, expr: &GroupingExpr) -> Result<T, LoxError>;
     fn visit_literal_expr(&self, expr: &LiteralExpr) -> Result<T, LoxError>;
     fn visit_logical_expr(&self, expr: &LogicalExpr) -> Result<T, LoxError>;
@@ -46,6 +49,12 @@ pub struct BinaryExpr {
     pub left: Rc<Expr>,
     pub operator: Token,
     pub right: Rc<Expr>,
+}
+
+pub struct CallExpr {
+    pub callee: Rc<Expr>,
+    pub paren: Token,
+    pub arguments: Vec<Rc<Expr>>,
 }
 
 pub struct GroupingExpr {
@@ -80,6 +89,12 @@ impl AssignExpr {
 impl BinaryExpr {
     pub fn accept<T>(&self, visitor: &dyn ExprVisitor<T>) -> Result<T, LoxError> {
         visitor.visit_binary_expr(self)
+    }
+}
+
+impl CallExpr {
+    pub fn accept<T>(&self, visitor: &dyn ExprVisitor<T>) -> Result<T, LoxError> {
+        visitor.visit_call_expr(self)
     }
 }
 
