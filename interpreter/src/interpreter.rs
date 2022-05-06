@@ -253,7 +253,7 @@ impl StmtVisitor<()> for Interpreter {
     }
 
     fn visit_block_stmt(&self, stmt: &BlockStmt) -> Result<(), LoxError>{ //enclosing: Rc<RefCell<Environment>>
-        self.execute_block(&stmt.statements, Environment::new_enclosing(Rc::new(self.environment.borrow_mut().as_ref().clone())))? ;
+        self.execute_block(&stmt.statements, Environment::new_enclosing(self.environment.borrow().clone()))? ;
         return Ok(());
     }
 }

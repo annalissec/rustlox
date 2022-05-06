@@ -46,15 +46,19 @@ impl Parser {
     }
 
     fn declaration(&mut self) -> Result<Rc<Stmt>, LoxError>{
-        match self.is_match(&[VAR]) {
-            LoxError => {
-                self.synchronize();
-            }
-            _=> {
-                return Ok(self.var_declaration()?);
-            }
+        let result = 
+        if self.is_match(&[VAR]) {
+            return Ok(self. var_declaration()?)
         }
-        return Ok(self.statement()?);
+        else {
+            Ok(self.statement()?)
+        };
+
+        if result.is_err() {
+            self.synchronize();
+        }
+
+        result
     }
 
     fn statement(&mut self) -> Result<Rc<Stmt>, LoxError> {
