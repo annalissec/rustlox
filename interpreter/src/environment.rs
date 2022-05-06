@@ -20,7 +20,7 @@ impl Environment {
         }
     }
 
-    pub fn new_enclosing(&self, enclosing: Rc<RefCell<Environment>>) -> Environment {
+    pub fn new_enclosing( enclosing: Rc<RefCell<Environment>>) -> Environment {
         Environment {
             enclosing: Some(enclosing),
             values: HashMap::new()

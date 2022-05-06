@@ -9,6 +9,7 @@ use crate::stmt::*;
 use crate::environment::Environment;
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::iter::Iterator;
 
 #[derive(Clone, Debug)]
 pub struct Interpreter {
@@ -23,8 +24,8 @@ impl Interpreter {
     }
     pub fn interpret(&self, statements: Vec<Rc<Stmt>>) -> Result<(), LoxError> {
         for statement in statements {
-            self.execute(&statement)?;
-            // match self.execute(&statement) {
+            self.execute(statement)?;
+            // match self.execute(&statement)? {
             //     LoxError => { 
             //         return Err(LoxError::null()); //TODO: fix error handling
             //     }
@@ -38,15 +39,22 @@ impl Interpreter {
         return expr.clone().accept(self)
     }
 
-    fn execute(&self, stmt: &Stmt) -> Result<(), LoxError>{
+    fn execute(&self, stmt: Rc<Stmt>) -> Result<(), LoxError>{
         stmt.accept(self)?;
         Ok(())
     }
 
-    fn execute_block(&self, statements: &Rc<Vec<Rc<Stmt>>>, environment: Environment) -> Result<(), LoxError> {
-        //TODO: start here
-        //let previous = self.environment.repl
-        Ok(())
+    fn execute_block(&self, statements: &Rc<Vec<Rc<Stmt>>>, 
+        environment: Environment // environment: RefCell<Rc<RefCell<Environment>>>
+    ) -> Result<(), LoxError> {
+
+        let previous = self.environment.replace(Rc::new(RefCell::new(environment)));
+
+        let result = statements.iter().try_for_each(|statement| self.execute(statement.clone()));
+
+        self.environment.replace(previous);
+
+        result
     }
 
     fn is_truthy(&self, object: &Object) -> bool {
@@ -61,7 +69,7 @@ impl Interpreter {
         }
         return true;
     }
-    fn is_equal (&self, a: Object, b: Object) -> bool {
+    fn is_equal(&self, a: Object, b: Object) -> bool {
         if a == Object::Nil && b == Object::Nil {return true;}
         if a == Object::Nil {return false;}
 
@@ -244,8 +252,8 @@ impl StmtVisitor<()> for Interpreter {
         Ok(())
     }
 
-    fn visit_block_stmt(&self, stmt: &BlockStmt) -> Result<(), LoxError>{
-        self.execute_block(&stmt.statements , Environment::new())?;
+    fn visit_block_stmt(&self, stmt: &BlockStmt) -> Result<(), LoxError>{ //enclosing: Rc<RefCell<Environment>>
+        self.execute_block(&stmt.statements, Environment::new_enclosing(Rc::new(self.environment.borrow_mut().as_ref().clone())))? ;
         return Ok(());
     }
 }
