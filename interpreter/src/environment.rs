@@ -8,6 +8,7 @@ use std::cell::RefCell;
 #[derive(Debug, Clone, PartialEq)]
 pub struct Environment {
     enclosing: Option<Rc<RefCell<Environment>>>,
+    //Some(Rc::new(RefCell::new(enclosing)))
     values: HashMap<String, Object>,
 }
 
@@ -19,8 +20,11 @@ impl Environment {
         }
     }
 
-    pub fn new_enclosing(&self, enclosing: Environment) {
-        self.enclosing = Some(Rc::new(enclosing));
+    pub fn new_enclosing(&self, enclosing: Rc<RefCell<Environment>>) -> Environment {
+        Environment {
+            enclosing: Some(enclosing),
+            values: HashMap::new()
+        }
     }
 
     pub fn define(&self, name: String, value: Object) {
@@ -32,9 +36,9 @@ impl Environment {
         if let Some(object) = self.values.get(&name.lexeme) {
             return Ok(object.clone());
         } 
-        // if !assert_eq!(self.enclosing, None) {
-        //     return Ok(self.enclosing.as_ref().unwrap().borrow().get(name)?);
-        // }
+        if self.enclosing.clone() != None {
+            return Ok(self.enclosing.as_ref().unwrap().borrow().get(name)?);
+        }
         else {
             return Err(LoxError::runtime_error(&name, String::from(format!("Undefined variable '{}'.", name.lexeme))));
         }                                           
@@ -45,10 +49,10 @@ impl Environment {
             self.values.insert(name.lexeme.clone(), value.clone());
             return Ok(());
         }
-        // if !assert_eq!(self.enclosing, None) {
-        //     self.enclosing.as_ref().unwrap().borrow().assign(name, value)?;
-        //     return Ok(());
-        // } 
+        if self.enclosing != None {
+            self.enclosing.as_ref().unwrap().borrow_mut().assign(name, value)?;
+            return Ok(());
+        } 
         else {
             Err(LoxError::runtime_error(name, String::from(format!("Undefined variable '{}'.", &name.lexeme))))
         }

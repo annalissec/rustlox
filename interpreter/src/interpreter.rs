@@ -1,3 +1,5 @@
+#![allow(non_snake_case)]
+
 use crate::expr::*;
 use crate::object::Object;
 use crate::error::LoxError;
@@ -21,12 +23,13 @@ impl Interpreter {
     }
     pub fn interpret(&self, statements: Vec<Rc<Stmt>>) -> Result<(), LoxError> {
         for statement in statements {
-            match self.execute(&statement) {
-                LoxError => { 
-                    return Err(LoxError::null()); //TODO: fix error handling
-                }
-                _=> {return Ok(());}
-            }
+            self.execute(&statement)?;
+            // match self.execute(&statement) {
+            //     LoxError => { 
+            //         return Err(LoxError::null()); //TODO: fix error handling
+            //     }
+            //     _=> {return Ok(());}
+            // }
         }
         Ok(())
     }
@@ -213,7 +216,7 @@ impl ExprVisitor<Object> for Interpreter {
     fn visit_assign_expr(&self, expr: &AssignExpr) -> Result<Object, LoxError> {
         let value = self.evaluate(expr.value.clone());
 
-        self.environment.borrow().borrow_mut().assign(&expr.name.clone(), value.clone()?);
+        self.environment.borrow().borrow_mut().assign(&expr.name.clone(), value.clone()?)?;
 
         return Ok(value?);
     }
@@ -242,7 +245,7 @@ impl StmtVisitor<()> for Interpreter {
     }
 
     fn visit_block_stmt(&self, stmt: &BlockStmt) -> Result<(), LoxError>{
-        self.execute_block(&stmt.statements , Environment::new());
+        self.execute_block(&stmt.statements , Environment::new())?;
         return Ok(());
     }
 }

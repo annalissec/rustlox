@@ -15,7 +15,7 @@ pub struct Scanner {
 impl Scanner {
     pub fn new(source: String) -> Scanner {
         Scanner {
-            source,
+            source: source.to_owned(),
             tokens: Vec::new(),
             start:0,
             current:0,
@@ -81,7 +81,7 @@ impl Scanner {
     //TODO: fix error return 
     fn scan_token(&mut self) -> Result<(), LoxError> {
         let c = self.advance();
-
+        
         match c {
             '(' => self.add_token(TokenType::LEFT_PAREN),
             ')' => self.add_token(TokenType::RIGHT_PAREN),
@@ -161,7 +161,9 @@ impl Scanner {
     fn identifier(&mut self) {
         let mut peek_var = self.peek();
         while self.is_alpha_numeric(peek_var) {
-            self.advance();
+            if !self.is_at_end() {
+                self.advance();
+            }
             peek_var = self.peek();
         }
 
@@ -175,20 +177,27 @@ impl Scanner {
 
     pub fn number(&mut self) {
         while self.peek().is_ascii_digit() {
-            self.advance();
+            if !self.is_at_end() {
+                self.advance();
+            }
         } 
 
         if self.peek() == '.' && self.peek_next().is_ascii_digit() {
-            self.advance();
+            if !self.is_at_end() {
+                self.advance();
+            }
         }
 
         while self.peek().is_ascii_digit() {
-            self.advance();
+            if !self.is_at_end() {
+                self.advance();
+            }
         } 
 
         let s = &self.source[self.start..self.current];
+        let num = s.parse::<f64>().unwrap();
 
-        &self.add_token_fr(TokenType::NUMBER, Some(Object::Number(s.parse::<f64>().unwrap())));
+        self.add_token_fr(TokenType::NUMBER, Some(Object::Number(num)));
     }
 
     pub fn string(&mut self) {
@@ -197,15 +206,18 @@ impl Scanner {
             if peek_var == '\n' {
                 self.line = self.line + 1;
             }
-            self.advance();
+            if !self.is_at_end() {
+                self.advance();
+            }
             peek_var = self.peek();
         }
 
         if self.is_at_end() {
             LoxError::error(self.line, String::from("Unterminated string."));
+        } else { 
+            self.advance();
         }
 
-        self.advance();
 
         let value = String::from(&self.source[self.start+1..self.current-1]);
         self.add_token_fr(TokenType::STRING, Some(Object::String(value)));
@@ -216,7 +228,7 @@ impl Scanner {
         if self.is_at_end() {
             return false;
         }
-        if self.source.chars().nth(self.current).unwrap() != expected {
+        if self.source.as_bytes()[self.current] as char != expected {
             return false;
         }
         self.current = self.current + 1;
@@ -227,14 +239,14 @@ impl Scanner {
         if self.is_at_end() {
             return '\0';
         }
-        return self.source.chars().nth(self.current).unwrap();
+        return self.source.as_bytes()[self.current] as char;
     }
 
     pub fn peek_next(&mut self) -> char{
-        if self.current + 1 >= self.source.len() {
+        if self.current + 1>= self.source.len() {
             return '\0';
         }
-        return self.source.chars().nth(self.current + 1).unwrap();
+        return self.source.as_bytes()[self.current + 1] as char;
     }
 
     pub fn is_digit(&mut self, c: char) -> bool {
@@ -250,9 +262,10 @@ impl Scanner {
     }
 
     pub fn advance(&mut self) -> char {
-        let result = self.source.chars().nth(self.current).unwrap();
+
+        let result = self.source.as_bytes()[self.current];
         self.current += 1;
-        result
+        result as char
     }
 
     pub fn add_token(&mut self, t_type: TokenType) {

@@ -24,6 +24,7 @@ impl Token {
                 line,
             }
         }
+
         pub fn dup(&self) -> Token {
             Token {
                 t_type: self.t_type,

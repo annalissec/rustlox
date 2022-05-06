@@ -1,4 +1,5 @@
-use crate::token::*;
+#![allow(non_snake_case)]
+
 use crate::tokentype::TokenType::*;
 use crate::tokentype::TokenType;
 use crate::expr::Expr;
@@ -7,6 +8,7 @@ use crate::error::LoxError;
 use crate::expr::*;
 use crate::stmt::Stmt;
 use crate::stmt::*;
+use crate::token::Token;
 
 use std::rc::Rc;
 
@@ -32,8 +34,11 @@ impl Parser {
         while !self.is_at_end() {
             statements.push(self.declaration()?)
         }
-
-        return Ok(statements);
+        if self.had_error {
+            Err(LoxError::null())
+        } else {
+            return Ok(statements);
+        }
     }
 
     fn expression(&mut self) -> Result<Expr, LoxError>{
@@ -76,7 +81,7 @@ impl Parser {
         
         let initializer = if self.is_match(&[EQUAL]) { Some(self.expression()) } else {None};
 
-        self.consume(SEMICOLON, String::from("Expect ';' after variable declaration."));
+        self.consume(SEMICOLON, String::from("Expect ';' after variable declaration."))?;
 
         Ok(Rc::new(Stmt::Var(Rc::new(VarStmt{name: name?, initializer: Some(Rc::new(initializer.unwrap()?))}))))
         
@@ -96,12 +101,12 @@ impl Parser {
         while !self.check(RIGHT_BRACE) && !self.is_at_end() {
             statements.push(self.declaration()?);
         }
-        self.consume(RIGHT_BRACE, String::from("Expect '}' after block."));
+        self.consume(RIGHT_BRACE, String::from("Expect '}' after block."))?;
         Ok(statements)
     }
 
     fn assignment(&mut self) -> Result<Expr, LoxError> {
-        let expr = self.equality();
+        let expr = self.equality()?;
         
         if self.is_match(&[EQUAL]) {
             let equals = self.previous();
@@ -114,62 +119,62 @@ impl Parser {
                 return Err(LoxError::error(equals.line, String::from("Invalid assignment target.")))
             }
         }
-        return Ok(expr)
+        return Ok(expr);
     }
 
-    fn equality(&mut self) -> Expr {
-        let mut expr = self.comparison();
+    fn equality(&mut self) -> Result<Expr, LoxError> {
+        let mut expr = self.comparison()?;
 
         while self.is_match(&[BANG_EQUAL, EQUAL_EQUAL]) {
             let operator = self.previous();
             let right = self.comparison();
-            expr = Expr::Binary(Rc::new(BinaryExpr {left: Rc::new(expr), operator: operator, right: Rc::new(right)}));
+            expr = Expr::Binary(Rc::new(BinaryExpr {left: Rc::new(expr), operator: operator, right: Rc::new(right?)}));
         }
-        expr
+        return Ok(expr);
     }
 
-    fn comparison(&mut self) -> Expr {
-        let mut expr = self.term();
+    fn comparison(&mut self) -> Result<Expr, LoxError> {
+        let mut expr = self.term()?;
 
         while self.is_match(&[GREATER, GREATER_EQUAL, LESS, LESS_EQUAL]) {
             let operator = self.previous();
             let right = self.term();
-            expr = Expr::Binary(Rc::new(BinaryExpr {left: Rc::new(expr), operator: operator, right: Rc::new(right)}));
+            expr = Expr::Binary(Rc::new(BinaryExpr {left: Rc::new(expr), operator: operator, right: Rc::new(right?)}));
         }
-        return expr;
+        return Ok(expr);
     }
 
-    fn term(&mut self) -> Expr {
-        let mut expr = self.factor();
+    fn term(&mut self) -> Result<Expr, LoxError> {
+        let mut expr = self.factor()?;
 
         while self.is_match(&[MINUS, PLUS]) {
             let operator = self.previous();
             let right = self.factor();
-            expr = Expr::Binary(Rc::new(BinaryExpr {left: Rc::new(expr), operator: operator, right: Rc::new(right)}));
+            expr = Expr::Binary(Rc::new(BinaryExpr {left: Rc::new(expr), operator: operator, right: Rc::new(right?)}));
         }
 
-        return expr;
+        return Ok(expr);
     }
 
-    fn factor(&mut self) -> Expr {
-        let mut expr = self.unary();
+    fn factor(&mut self) -> Result<Expr, LoxError> {
+        let mut expr = self.unary()?;
 
         while self.is_match(&[SLASH, STAR]) {
             let operator = self.previous();
             let right = self.unary();
-            expr = Expr::Binary(Rc::new(BinaryExpr {left: Rc::new(expr), operator: operator, right: Rc::new(right)}));
+            expr = Expr::Binary(Rc::new(BinaryExpr {left: Rc::new(expr), operator: operator, right: Rc::new(right?)}));
         }
 
-        return expr;
+        return Ok(expr);
     }
 
-    fn unary(&mut self) -> Expr {
+    fn unary(&mut self) -> Result<Expr, LoxError> {
         if self.is_match(&[BANG, MINUS]) {
             let operator = self.previous();
             let right = self.unary();
-            return Expr::Unary(Rc::new(UnaryExpr {operator: operator, right: Rc::new(right)})); 
+            return Ok(Expr::Unary(Rc::new(UnaryExpr {operator: operator, right: Rc::new(right?)})));
         }
-        return self.primary().unwrap();
+            Ok(self.primary()?)
     }
 
     fn primary(&mut self) -> Result<Expr, LoxError>{
@@ -198,7 +203,7 @@ impl Parser {
         }
 
         let peek_var = self.peek();
-        Err(self.error(peek_var, String::from("Expect expression.")))
+        Err(LoxError::parse_error(&peek_var, String::from("Expect expression.")))
     }
 
     fn is_match(&mut self, types: &[TokenType]) -> bool {
