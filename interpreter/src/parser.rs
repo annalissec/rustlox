@@ -51,7 +51,10 @@ impl Parser {
     fn declaration(&mut self) -> Result<Rc<Stmt>, LoxError>{
         let result = 
         if self.is_match(&[VAR]) {
-            return Ok(self. var_declaration()?)
+            return Ok(self.var_declaration()?)
+        }
+        else if self.is_match(&[FUN]) {
+            return Ok(self.function("function")?)
         }
         else {
             Ok(self.statement()?)
@@ -247,6 +250,35 @@ impl Parser {
         self.consume(SEMICOLON, String::from("Expect ';' after expression."))?;
         
         return Ok(Rc::new(Stmt::Expression(Rc::new(ExpressionStmt {expression: Rc::new(expr?)}))));
+    }
+
+    fn function(&self, kind: &str) -> Result<Rc<Stmt>, LoxError> {
+        let name = self.consume(IDENTIFIER, String::from(format!("Expect {} name.", kind)));
+
+        self.consume(LEFT_PAREN, String::from(format!("Expect '(' after {} name.", kind)));
+
+        let mut parameters: Vec<Token> = Vec::new();
+        loop {
+            if self.is_match(&[COMMA]) {
+                if parameters.len() >= 255 {
+                    let peek_var = self.peek();
+                    return Err(self.error(peek_var, String::from("Can't have more than 255 parameters.")));
+                }
+                parameters.push(self.consume(IDENTIFIER, String::from("Expect parameter name."))?);
+            } else {
+                break;
+            }
+        }
+
+        self.consume(RIGHT_PAREN, String::from("Expect ')' after parameters."));
+        self.consume(LEFT_BRACE, String::from(format!("Expect '{{' before {} body.", kind)));
+        let body = self.block();
+
+        Ok(Rc::new(Stmt::Function(Rc::new(FunctionStmt{
+            name: name?,
+            params: Rc::new(parameters),
+            body: Rc::new(body?)
+        }))))
     }
 
     fn block(&mut self) -> Result<Vec<Rc<Stmt>>, LoxError> {

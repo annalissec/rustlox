@@ -7,7 +7,9 @@ use crate::tokentype::TokenType::*;
 use crate::token::Token;
 use crate::stmt::*;
 use crate::environment::Environment;
-use crate::loxcallable::*;
+use crate::nativefunction;
+use crate::loxfunction::*;
+
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::iter::Iterator;
@@ -16,7 +18,7 @@ use std::iter::Iterator;
 
 #[derive(Clone, Debug)]
 pub struct Interpreter {
-    globals: Rc<RefCell<Environment>>,
+    pub globals: Rc<RefCell<Environment>>,
     environment: RefCell<Rc<RefCell<Environment>>>
 }
 
@@ -26,10 +28,9 @@ impl Interpreter {
 
         globals.borrow_mut().define(
             "clock", 
-            Object::Func(Rc::new(Callable{
-                function: Rc::new(NativeClock {}),
-                arity: 0
-        })));
+            Object::Native(Rc::new(nativefunction::LoxNative{
+                func: Rc::new(NativeClock{})
+            })));
         Interpreter {
             globals: Rc::clone(&globals),
             environment: RefCell::new(Rc::clone(&globals)),   
@@ -57,7 +58,7 @@ impl Interpreter {
         Ok(())
     }
 
-    fn execute_block(&self, statements: &Rc<Vec<Rc<Stmt>>>, 
+    pub fn execute_block(&self, statements: &Rc<Vec<Rc<Stmt>>>, 
         environment: Environment // environment: RefCell<Rc<RefCell<Environment>>>
     ) -> Result<(), LoxError> {
         let previous = self.environment.replace(Rc::new(RefCell::new(environment)));
@@ -113,6 +114,13 @@ impl StmtVisitor<()> for Interpreter {
     fn visit_expression_stmt(&self, stmt: &ExpressionStmt) -> Result<(), LoxError> {
         self.evaluate(stmt.expression.clone())?;
         return Ok(());
+    }
+
+    fn visit_function_stmt(&self, stmt: &FunctionStmt) -> Result<(), LoxError> {
+        let function = LoxFunction::new(stmt);
+
+        self.environment.borrow_mut().as_ref().borrow_mut().define(&stmt.name.lexeme, Object::Func(Rc::new(function)));
+        Ok()
     }
 
     fn visit_break_stmt(&self, _stmt: &BreakStmt) -> Result<(), LoxError> {

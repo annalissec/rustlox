@@ -13,6 +13,15 @@ pub struct Callable {
     pub arity: usize
 }
 
+// impl Callable {
+//     pub fn new() -> Callable {
+//         Callable {
+//             function: Rc::new(LoxCallable::new()),
+//             arity: 0        
+//         }
+//     }
+// }
+
 impl Debug for Callable {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "<callable>")

@@ -17,6 +17,8 @@ mod parser;
 mod interpreter;
 mod environment;
 mod loxcallable;
+mod loxfunction;
+mod nativefunction;
 
 
 fn main() {
