@@ -7,19 +7,32 @@ use crate::tokentype::TokenType::*;
 use crate::token::Token;
 use crate::stmt::*;
 use crate::environment::Environment;
+use crate::loxcallable::*;
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::iter::Iterator;
 
+
+
 #[derive(Clone, Debug)]
 pub struct Interpreter {
+    globals: Rc<RefCell<Environment>>,
     environment: RefCell<Rc<RefCell<Environment>>>
 }
 
 impl Interpreter {
     pub fn new() -> Self {
+        let globals = Rc::new(RefCell::new(Environment::new()));
+
+        globals.borrow_mut().define(
+            "clock", 
+            Object::Func(Rc::new(Callable{
+                function: Rc::new(NativeClock {}),
+                arity: 0
+        })));
         Interpreter {
-            environment: RefCell::new(Rc::new(RefCell::new(Environment::new()))),   
+            globals: Rc::clone(&globals),
+            environment: RefCell::new(Rc::clone(&globals)),   
         }
     }
     pub fn interpret(&self, statements: Vec<Rc<Stmt>>) -> Result<(), LoxError> {

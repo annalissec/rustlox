@@ -1,5 +1,6 @@
 use std::fmt;
 use std::rc::Rc;
+use std::time::SystemTime;
 use core::fmt::{Debug, Display};
 
 use crate::interpreter::*;
@@ -43,5 +44,20 @@ impl LoxCallable for Callable {
     }
     fn arity(&self) -> usize {
         self.arity
+    }
+}
+
+pub struct NativeClock;
+
+impl LoxCallable for NativeClock {
+    fn call(&self, _interpreter: &Interpreter, _arguments: Vec<Object>) ->  Result<Object, LoxError>{
+        match SystemTime::now().duration_since(SystemTime::UNIX_EPOCH) {
+            Ok(n) => Ok(Object::Number(n.as_millis() as f64)),
+            Err(e) => Err(LoxError::null()) //TODO: make error for clock
+        }
+    }
+
+    fn arity(&self) -> usize {
+        0
     }
 }
